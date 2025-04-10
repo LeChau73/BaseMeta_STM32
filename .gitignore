@@ -1,0 +1,5 @@
+# Bỏ qua thư mục vscode
+.vscode/
+
+# Bỏ qua thư mục build
+build/ 
