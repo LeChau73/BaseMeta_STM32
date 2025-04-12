@@ -2,19 +2,6 @@
 
 
 
-void function1() {
-    static int local1 = 10; // Static local variable located in RAM(section .data)
-    int local2 = 20; // Local variable located in RAM(section .stack)
-}
-
-void function2() {
-    static int local1 = 10; // Static local variable located in RAM(section .data)
-    int local2 = 20; // Local variable located in RAM(section .stack)
-}
-
-extern void initialize_monitor_handles(void);
-
-//struct Dummy* dummy1 = (struct Dummy*)malloc(sizeof(struct Dummy)); // Heap variable
 
 int main() {
 

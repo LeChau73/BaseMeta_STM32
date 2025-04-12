@@ -8,8 +8,14 @@ OBJDUMP = $(PREFIX)objdump
 SIZE = $(PREFIX)size
 
 # Thư mục dự án
-SRC_DIR = Core/Src
-INC_DIR = Core/Inc
+SRC_DIR = 
+	Core/Src \
+	Core/Src \
+	Drivers/Src \
+INC_DIR = 
+	Core/Inc \
+	Drivers/Inc \
+
 BUILD_DIR = build
 
 # Linker script
