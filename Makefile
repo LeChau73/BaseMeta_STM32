@@ -8,13 +8,15 @@ OBJDUMP = $(PREFIX)objdump
 SIZE = $(PREFIX)size
 
 # Thư mục dự án
-SRC_DIR = 
-	Core/Src \
+SRC_DIR = \
 	Core/Src \
 	Drivers/Src \
-INC_DIR = 
+	Drivers/STM32F411VE_Driver/Src
+
+INC_DIR = \
 	Core/Inc \
-	Drivers/Inc \
+	Drivers/Core/ \
+	Drivers/STM32F411VE_Driver/Inc
 
 BUILD_DIR = build
 
@@ -27,24 +29,21 @@ FPU = -mfpu=fpv4-sp-d16 -mfloat-abi=hard
 CFLAGS = $(CPU) -mthumb $(FPU) \
          -Wall -Wextra \
          -O0 -g3 \
-         -I$(INC_DIR) \
+         $(foreach dir,$(INC_DIR),-I$(dir)) \
          -std=gnu11
 
 # Cờ liên kết
 LDFLAGS = $(CPU) -mthumb $(FPU) \
           -T$(LINKER_SCRIPT) \
           -Wl,-Map=$(BUILD_DIR)/output.map \
-          --specs=nano.specs -lc -lrdimon
+          --specs=nano.specs -lc
 
-# Tìm tất cả các file nguồn ngoại trừ syscalls.c
-SRCS = $(filter-out $(SRC_DIR)/syscalls.c, $(wildcard $(SRC_DIR)/*.c))
+# Tìm tất cả các file nguồn
+SRCS = $(foreach dir,$(SRC_DIR),$(wildcard $(dir)/*.c))
 SRCS += startup_stm32f411xe.c
 
-# Thêm syscalls.c nếu cần
-USE_SYSCALLS = 0  # Đặt thành 1 nếu bạn muốn biên dịch syscalls.c
-ifeq ($(USE_SYSCALLS), 1)
-    SRCS += $(SRC_DIR)/syscalls.c
-endif
+# Remove syscalls.c if exists (to avoid conflicts)
+#SRCS := $(filter-out %syscalls.c,$(SRCS))
 
 # Chỉ định nơi tìm file nguồn (Thư mục hiện tại và Core/Src)
 vpath %.c $(SRC_DIR) .
@@ -68,6 +67,9 @@ $(BUILD_DIR)/%.o: %.c
 
 # Liên kết các file object thành file elf
 $(TARGET).elf: $(OBJS)
+	@echo "SRC_DIR: $(SRC_DIR)"
+	@echo "SRC_DIR: $(SRCS)"
+	@echo "Linking: $(OBJS)"
 	$(CC) $(LDFLAGS) $(OBJS) -o $@
 	$(OBJDUMP) -h -S $@ > $(TARGET).list
 

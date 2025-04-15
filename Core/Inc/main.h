@@ -2,7 +2,7 @@
 #define __MAIN_H
 #include "stdio.h"
 #include "stdlib.h"
-
+#include "stm32f4xx_itm.h"
 
 extern void initialize_monitor_handles(void);
 

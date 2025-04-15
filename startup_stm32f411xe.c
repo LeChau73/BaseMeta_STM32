@@ -62,6 +62,8 @@ void Reset_Handler(void)
         *pDest++ = 0;
     }
 
+    __libc_init_array();
+
     // 3. Gọi main
     main();
 
