@@ -1,4 +1,4 @@
-Dựa trên tài liệu bạn cung cấp từ khóa học **Udemy: Mastering Microcontroller with Embedded Driver Development**, dưới đây là roadmap chi tiết từng phần để học và thực hành. Roadmap này được chia theo các section trong khóa học, với các bước cụ thể để hoàn thành từng phần. Mỗi section bao gồm các bước học lý thuyết, thực hành và kiểm tra để đảm bảo nắm vững nội dung.
+  Dựa trên tài liệu bạn cung cấp từ khóa học **Udemy: Mastering Microcontroller with Embedded Driver Development**, dưới đây là roadmap chi tiết từng phần để học và thực hành. Roadmap này được chia theo các section trong khóa học, với các bước cụ thể để hoàn thành từng phần. Mỗi section bao gồm các bước học lý thuyết, thực hành và kiểm tra để đảm bảo nắm vững nội dung.
 
 ---
 

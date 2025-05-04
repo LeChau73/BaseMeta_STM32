@@ -97,14 +97,18 @@ PATH_OCD := "d:/STMicroelectronics/OpenOCD-20240916-0.12.0"
 OPEN_OCD = $(PATH_OCD)/bin/openocd.exe
 STLINK_PATH = $(PATH_OCD)/share/openocd/scripts/interface
 TARGET_PATH = $(PATH_OCD)/share/openocd/scripts/target
+OPEN_OCDLINUX = openocd
 
 # Mục tiêu flash
 flash: $(TARGET).bin
 	$(OPEN_OCD) -f "$(STLINK_PATH)/stlink.cfg" -f "$(TARGET_PATH)/stm32f4x.cfg" -c "program \"$(TARGET).bin\" reset exit 0x08000000"
 
 
-connect:
+connect_window:
 	 $(OPEN_OCD) -f $(STLINK_PATH)/stlink.cfg -f $(TARGET_PATH)/stm32f4x.cfg
+
+connect_linux:
+	$(OPEN_OCDLINUX) -f /usr/share/openocd/scripts/interface/stlink.cfg -f /usr/share/openocd/scripts/target/stm32f4x.cfg
 
 
 # Mục tiêu debug: Khởi chạy GDB client, yêu cầu OpenOCD chạy ở terminal khác
@@ -122,5 +126,22 @@ debug: $(TARGET).elf
 		-ex "load" \
 		-ex "break main" \
 		-ex "continue"
+
+# Mục tiêu debug trên Linux/WSL: Khởi chạy GDB client, yêu cầu OpenOCD chạy ở terminal khác
+debug_linux: $(TARGET).elf
+	@echo "--------------------------------------------------------------------"
+	@echo " IMPORTANT: Make sure OpenOCD is running in a SEPARATE terminal:"
+	@echo " $(OPEN_OCD) -f \"$(STLINK_PATH)/stlink.cfg\" -f \"$(TARGET_PATH)/stm32f4x.cfg\""
+	@echo "--------------------------------------------------------------------"
+	@echo "Starting GDB client and connecting to localhost:3333..."
+	gdb-multiarch $(CURDIR)/$(TARGET).elf \
+		-ex "set confirm off" \
+		-ex "directory $(CURDIR)/Core/Src" \
+		-ex "target remote localhost:3333" \
+		-ex "monitor reset halt" \
+		-ex "load" \
+		-ex "break main" \
+		-ex "continue"
+
 
 .PHONY: all clean size dump flash debug

@@ -34,7 +34,7 @@ void Init_ITM(uint8_t port, uint8_t prescaler) {
     ITM->TPR |= mask;
 
     // Configure frequency prescaler for trace (assuming 16MHz default clock)
-    TPI->ACPR = (16000000 / 4000000) - 1;  // For 4MHz trace clock
+    TPI->ACPR = (16000000 / 8000000) - 1;  // For 4MHz trace clock
     // Configure mode for trace
     TPI->SPPR |= TPI_SPPR_TXMODE_Msk;
 
