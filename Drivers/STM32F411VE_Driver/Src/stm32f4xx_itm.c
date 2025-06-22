@@ -1,6 +1,7 @@
 #include "stm32f4xx_itm.h"
 #include <stdio.h>
 #include <stdarg.h>
+#include <stdint.h>
 
 void Init_ITM(uint8_t port, uint8_t prescaler) {
     // This function initializes the Instrumentation Trace Macrocell (ITM) for tracing.
@@ -40,7 +41,7 @@ void Init_ITM(uint8_t port, uint8_t prescaler) {
 
 }
 
-void ITM_SendChar(char c, uint8_t port) {
+void ITM_SendChar(uint32_t c, uint8_t port) {
     // Check if ITM is enabled
     if (!(ITM->TCR & ITM_TCR_ITMENA_Msk)) {
         return;
@@ -64,7 +65,7 @@ void ITM_SendChar(char c, uint8_t port) {
     }
 
     // Send char
-    ITM->PORT[port].u8 = c;
+    ITM->PORT[port].u8 = (uint8_t)c;
 }
 
 void ITM_SendString(const char* str,uint8_t port)

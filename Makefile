@@ -6,6 +6,7 @@ LD = $(PREFIX)ld
 OBJCOPY = $(PREFIX)objcopy
 OBJDUMP = $(PREFIX)objdump
 SIZE = $(PREFIX)size
+DEBUG = 1
 
 # Thư mục dự án
 SRC_DIR = \
@@ -28,19 +29,32 @@ CPU = -mcpu=cortex-m4
 FPU = -mfpu=fpv4-sp-d16 -mfloat-abi=hard
 CFLAGS = $(CPU) -mthumb $(FPU) \
          -Wall -Wextra \
-         -O0 -g3 \
+         -O0 -g \
          $(foreach dir,$(INC_DIR),-I$(dir)) \
          -std=gnu11
+
+semihosting = 1
 
 # Cờ liên kết
 LDFLAGS = $(CPU) -mthumb $(FPU) \
           -T$(LINKER_SCRIPT) \
-          -Wl,-Map=$(BUILD_DIR)/output.map \
-          --specs=nano.specs -lc
+          -Wl,-Map=$(BUILD_DIR)/output.map
+
+ifeq ($(semihosting),0)
+LDFLAGS += -specs=nano.specs -lc
+else
+LDFLAGS += -specs=rdimon.specs -lc -lrdimon
+endif
 
 # Tìm tất cả các file nguồn
 SRCS = $(foreach dir,$(SRC_DIR),$(wildcard $(dir)/*.c))
 SRCS += startup_stm32f411xe.c
+# Nếu dùng semihosting, không cần syscalls.c
+ifeq ($(semihosting),1)
+SRCS := $(filter-out %syscalls.c, $(SRCS))
+endif
+
+
 
 # Remove syscalls.c if exists (to avoid conflicts)
 #SRCS := $(filter-out %syscalls.c,$(SRCS))
@@ -122,8 +136,9 @@ debug: $(TARGET).elf
 		-ex "set confirm off" \
 		-ex "directory $(CURDIR)/Core/Src" \
 		-ex "target remote localhost:3333" \
+		-ex "monitor arm semihosting enable" \
 		-ex "monitor reset halt" \
-		-ex "load" \
+		-ex "load"
 		-ex "break main" \
 		-ex "continue"
 

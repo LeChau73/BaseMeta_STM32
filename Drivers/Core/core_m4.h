@@ -1,3 +1,6 @@
+#ifndef CORE_M4
+#define CORE_M4
+
 #include <stdint.h>
 
 
@@ -10,7 +13,7 @@ extern "C"
 #define __IM volatile const /*! Defines 'read only' structure member permissions */
 #define __OM volatile       /*! Defines 'write only' structure member permissions */
 #define __IOM volatile      /*! Defines 'read / write' structure member permissions */
-
+#define  __IO    volatile
 
     typedef struct
     {
@@ -154,6 +157,29 @@ extern "C"
 
 
 
+
+    
+/** 
+  * @brief FLASH Registers
+  */
+
+typedef struct
+{
+  __IO uint32_t ACR;      /*!< FLASH access control register,   Address offset: 0x00 */
+  __IO uint32_t KEYR;     /*!< FLASH key register,              Address offset: 0x04 */
+  __IO uint32_t OPTKEYR;  /*!< FLASH option key register,       Address offset: 0x08 */
+  __IO uint32_t SR;       /*!< FLASH status register,           Address offset: 0x0C */
+  __IO uint32_t CR;       /*!< FLASH control register,          Address offset: 0x10 */
+  __IO uint32_t OPTCR;    /*!< FLASH option control register ,  Address offset: 0x14 */
+  __IO uint32_t OPTCR1;   /*!< FLASH option control register 1, Address offset: 0x18 */
+} FLASH_TypeDef;
+
+
+
+
+
+
+
 /**
   \brief  Structure type to access the Core Debug Register (CoreDebug).
  */
@@ -175,13 +201,152 @@ typedef struct
 #define TPI_BASE            (0xE0040000UL)            /*!< TPI Base Address */
 #define CoreDebug_BASE      (0xE000EDF0UL)                            /*!< Core Debug Base Address */
 
+#define PERIPH_BASE           0x40000000UL /*!< Peripheral base address in the alias region */
+#define AHB1PERIPH_BASE       (PERIPH_BASE + 0x00020000UL)
+#define FLASH_R_BASE          (AHB1PERIPH_BASE + 0x3C00UL)
+
+
+
 #define ITM                 ((ITM_Type*)ITM_BASE) // Ép kiểu ITM_Type để có thể truy cập vào struct này,và nói rằng là một con trỏ kiểu ITM_Type đang trỏ đến ITM_BASE
 #define DWT                 ((DWT_Type*)DWT_BASE)                   /*!< DWT configuration struct */
 #define TPI                 ((TPI_Type*)TPI_BASE)                   /*!< TPI configuration struct */
+#define FLASH               ((FLASH_TypeDef *) FLASH_R_BASE)
+
 
 #define CoreDebug           ((CoreDebug_Type *) CoreDebug_BASE)
 
 
+
+
+
+
+
+
+
+
+/*******************  Bits definition for FLASH_SR register  ******************/
+#define FLASH_SR_EOP_Pos               (0U)                                    
+#define FLASH_SR_EOP_Msk               (0x1UL << FLASH_SR_EOP_Pos)              /*!< 0x00000001 */
+#define FLASH_SR_EOP                   FLASH_SR_EOP_Msk                        
+#define FLASH_SR_SOP_Pos               (1U)                                    
+#define FLASH_SR_SOP_Msk               (0x1UL << FLASH_SR_SOP_Pos)              /*!< 0x00000002 */
+#define FLASH_SR_SOP                   FLASH_SR_SOP_Msk                        
+#define FLASH_SR_WRPERR_Pos            (4U)                                    
+#define FLASH_SR_WRPERR_Msk            (0x1UL << FLASH_SR_WRPERR_Pos)           /*!< 0x00000010 */
+#define FLASH_SR_WRPERR                FLASH_SR_WRPERR_Msk                     
+#define FLASH_SR_PGAERR_Pos            (5U)                                    
+#define FLASH_SR_PGAERR_Msk            (0x1UL << FLASH_SR_PGAERR_Pos)           /*!< 0x00000020 */
+#define FLASH_SR_PGAERR                FLASH_SR_PGAERR_Msk                     
+#define FLASH_SR_PGPERR_Pos            (6U)                                    
+#define FLASH_SR_PGPERR_Msk            (0x1UL << FLASH_SR_PGPERR_Pos)           /*!< 0x00000040 */
+#define FLASH_SR_PGPERR                FLASH_SR_PGPERR_Msk                     
+#define FLASH_SR_PGSERR_Pos            (7U)                                    
+#define FLASH_SR_PGSERR_Msk            (0x1UL << FLASH_SR_PGSERR_Pos)           /*!< 0x00000080 */
+#define FLASH_SR_PGSERR                FLASH_SR_PGSERR_Msk                     
+#define FLASH_SR_BSY_Pos               (16U)                                   
+#define FLASH_SR_BSY_Msk               (0x1UL << FLASH_SR_BSY_Pos)              /*!< 0x00010000 */
+#define FLASH_SR_BSY                   FLASH_SR_BSY_Msk                        
+
+/*******************  Bits definition for FLASH_CR register  ******************/
+#define FLASH_CR_PG_Pos                (0U)                                    
+#define FLASH_CR_PG_Msk                (0x1UL << FLASH_CR_PG_Pos)               /*!< 0x00000001 */
+#define FLASH_CR_PG                    FLASH_CR_PG_Msk                         
+#define FLASH_CR_SER_Pos               (1U)                                    
+#define FLASH_CR_SER_Msk               (0x1UL << FLASH_CR_SER_Pos)              /*!< 0x00000002 */
+#define FLASH_CR_SER                   FLASH_CR_SER_Msk                        
+#define FLASH_CR_MER_Pos               (2U)                                    
+#define FLASH_CR_MER_Msk               (0x1UL << FLASH_CR_MER_Pos)              /*!< 0x00000004 */
+#define FLASH_CR_MER                   FLASH_CR_MER_Msk                        
+#define FLASH_CR_SNB_Pos               (3U)                                    
+#define FLASH_CR_SNB_Msk               (0x1FUL << FLASH_CR_SNB_Pos)             /*!< 0x000000F8 */
+#define FLASH_CR_SNB                   FLASH_CR_SNB_Msk                        
+#define FLASH_CR_SNB_0                 (0x01UL << FLASH_CR_SNB_Pos)             /*!< 0x00000008 */
+#define FLASH_CR_SNB_1                 (0x02UL << FLASH_CR_SNB_Pos)             /*!< 0x00000010 */
+#define FLASH_CR_SNB_2                 (0x04UL << FLASH_CR_SNB_Pos)             /*!< 0x00000020 */
+#define FLASH_CR_SNB_3                 (0x08UL << FLASH_CR_SNB_Pos)             /*!< 0x00000040 */
+#define FLASH_CR_SNB_4                 (0x10UL << FLASH_CR_SNB_Pos)             /*!< 0x00000080 */
+#define FLASH_CR_PSIZE_Pos             (8U)                                    
+#define FLASH_CR_PSIZE_Msk             (0x3UL << FLASH_CR_PSIZE_Pos)            /*!< 0x00000300 */
+#define FLASH_CR_PSIZE                 FLASH_CR_PSIZE_Msk                      
+#define FLASH_CR_PSIZE_0               (0x1UL << FLASH_CR_PSIZE_Pos)            /*!< 0x00000100 */
+#define FLASH_CR_PSIZE_1               (0x2UL << FLASH_CR_PSIZE_Pos)            /*!< 0x00000200 */
+#define FLASH_CR_STRT_Pos              (16U)                                   
+#define FLASH_CR_STRT_Msk              (0x1UL << FLASH_CR_STRT_Pos)             /*!< 0x00010000 */
+#define FLASH_CR_STRT                  FLASH_CR_STRT_Msk                       
+#define FLASH_CR_EOPIE_Pos             (24U)                                   
+#define FLASH_CR_EOPIE_Msk             (0x1UL << FLASH_CR_EOPIE_Pos)            /*!< 0x01000000 */
+#define FLASH_CR_EOPIE                 FLASH_CR_EOPIE_Msk                      
+#define FLASH_CR_LOCK_Pos              (31U)                                   
+#define FLASH_CR_LOCK_Msk              (0x1UL << FLASH_CR_LOCK_Pos)             /*!< 0x80000000 */
+#define FLASH_CR_LOCK                  FLASH_CR_LOCK_Msk                       
+
+
+
+
+
+
+
+#define SET_BIT(REG, BIT)     ((REG) |= (BIT))
+
+#define CLEAR_BIT(REG, BIT)   ((REG) &= ~(BIT))
+
+#define READ_BIT(REG, BIT)    ((REG) & (BIT))
+
+#define CLEAR_REG(REG)        ((REG) = (0x0))
+
+#define WRITE_REG(REG, VAL)   ((REG) = (VAL))
+
+#define READ_REG(REG)         ((REG))
+
+#define MODIFY_REG(REG, CLEARMASK, SETMASK)  WRITE_REG((REG), (((READ_REG(REG)) & (~(CLEARMASK))) | (SETMASK)))
+
+
+
+
+#define FLASH_SECTOR_0     0U  /*!< Sector Number 0   */
+#define FLASH_SECTOR_1     1U  /*!< Sector Number 1   */
+#define FLASH_SECTOR_2     2U  /*!< Sector Number 2   */
+#define FLASH_SECTOR_3     3U  /*!< Sector Number 3   */
+#define FLASH_SECTOR_4     4U  /*!< Sector Number 4   */
+#define FLASH_SECTOR_5     5U  /*!< Sector Number 5   */
+#define FLASH_SECTOR_6     6U  /*!< Sector Number 6   */
+#define FLASH_SECTOR_7     7U  /*!< Sector Number 7   */
+
+#define IS_FLASH_SECTOR(SECTOR)    ( (SECTOR == FLASH_SECTOR_0) || (SECTOR == FLASH_SECTOR_1) ||\
+                                     (SECTOR == FLASH_SECTOR_2) || (SECTOR == FLASH_SECTOR_3) ||\
+                                     (SECTOR == FLASH_SECTOR_4) || (SECTOR == FLASH_SECTOR_5) ||\
+                                     (SECTOR == FLASH_SECTOR_6) || (SECTOR == FLASH_SECTOR_7) )
+
+
+#define FLASH_VOLTAGE_RANGE_1        0x00000000U  /*!< Device operating range: 1.8V to 2.1V                */
+#define FLASH_VOLTAGE_RANGE_2        0x00000001U  /*!< Device operating range: 2.1V to 2.7V                */
+#define FLASH_VOLTAGE_RANGE_3        0x00000002U  /*!< Device operating range: 2.7V to 3.6V                */
+#define FLASH_VOLTAGE_RANGE_4        0x00000003U  /*!< Device operating range: 2.7V to 3.6V + External Vpp */
+
+
+#define IS_VOLTAGERANGE(RANGE)(((RANGE) == FLASH_VOLTAGE_RANGE_1) || \
+                               ((RANGE) == FLASH_VOLTAGE_RANGE_2) || \
+                               ((RANGE) == FLASH_VOLTAGE_RANGE_3) || \
+                               ((RANGE) == FLASH_VOLTAGE_RANGE_4))
+
+
+#define FLASH_PSIZE_BYTE           0x00000000U
+#define FLASH_PSIZE_HALF_WORD      0x00000100U
+#define FLASH_PSIZE_WORD           0x00000200U
+#define FLASH_PSIZE_DOUBLE_WORD    0x00000300U
+
+
+#ifdef USE_FULL_ASSERT
+
+  #define assert_param(expr)  ((expr) ? (void)0U : assert_failed((uint8_t *)__FILE__, _LINE_))
+  void assert_failed(uint8_t* file, uint32_t line);
+#else
+  #define assert_param(expr) ((void)0U)
+
+#endif
+
 #ifdef __cplusplus
 }
+#endif
+
 #endif

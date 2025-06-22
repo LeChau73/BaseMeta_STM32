@@ -21,6 +21,7 @@ extern uint32_t _ebss;      // Địa chỉ kết thúc .bss
 
 // Khai báo hàm main
 extern int main(void);
+extern void __libc_init_array(void);
 
 // Default handler for interrupts
 void Default_Handler(void) {
@@ -35,13 +36,14 @@ __attribute__((weak, alias("Default_Handler"))) void HardFault_Handler(void);
 
 // Vector Table
 __attribute__((section(".isr_vector")))
-uint32_t *isr_vectors[] = {
-    (uint32_t)START_STACK,           /* Stack pointer */
-    (uint32_t)Reset_Handler,         /* Reset handler */
-    (uint32_t)NMI_Handler,           /* NMI handler */
-    (uint32_t)HardFault_Handler,     /* Hard fault handler */
-    /* Add more ISR vectors as needed */
+void (* const g_pfnVectors[])(void) = {
+    (void (*)(void))(START_STACK),  /* Stack pointer */
+    Reset_Handler,               /* Reset */
+    NMI_Handler,                 /* Non-Maskable Interrupt */
+    HardFault_Handler,           /* Hard Fault */
 };
+
+
 
 // Reset Handler Implementation
 void Reset_Handler(void)

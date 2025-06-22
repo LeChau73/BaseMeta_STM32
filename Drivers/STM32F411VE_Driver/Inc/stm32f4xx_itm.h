@@ -16,7 +16,7 @@ extern "C"
 
 // Bỏ từ khóa static để hàm có thể dùng chung
 void Init_ITM(uint8_t port, uint8_t prescaler);
-void ITM_SendChar(char c, uint8_t port); 
+void ITM_SendChar(uint32_t c, uint8_t port); 
 void ITM_SendString(const char* str, uint8_t port);
 void ITM_SendInt(int32_t num, uint8_t port);
 void ITM_SendBuffer(const uint8_t* buffer, uint32_t size, uint8_t port);

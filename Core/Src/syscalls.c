@@ -6,6 +6,7 @@
 #include <time.h>
 #include <sys/time.h>
 #include <sys/times.h>
+#include <errno.h>
 
 // Định nghĩa các hàm syscall cần thiết
 void _exit(int status)
@@ -47,3 +48,14 @@ caddr_t _sbrk(int incr)
 
     return (caddr_t) prev_heap_end;
 } 
+
+
+
+int _fstat(int file, struct stat *st) {
+    st->st_mode = S_IFCHR; // giả lập thiết bị character
+    return 0;
+}
+
+int _isatty(int file) {
+    return 1; // luôn cho là terminal
+}

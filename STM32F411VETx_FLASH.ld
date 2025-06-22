@@ -69,7 +69,7 @@ FLASH (rx)      : ORIGIN = 0x8000000, LENGTH = 512K
 SECTIONS
 {
   /* The startup code goes first into FLASH */
-  .isr_vector :
+  .isr_vectors :
   {
     . = ALIGN(4);
     KEEP(*(.isr_vector)) /* Startup code */
@@ -160,6 +160,8 @@ SECTIONS
     . = ALIGN(4);
     _ebss = .;         /* define a global symbol at bss end */
     __bss_end__ = _ebss;
+    __end__ = _ebss;          /* ✅ Thêm dòng này */
+    PROVIDE(_end = __end__);  /* ✅ Alias để tránh lỗi */
   } >RAM
 
   /* User_heap_stack section, used to check that there is enough RAM left */
@@ -173,7 +175,7 @@ SECTIONS
     . = ALIGN(8);
   } >RAM
 
-  
+
 
   /* Remove information from the standard libraries */
   /DISCARD/ :

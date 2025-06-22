@@ -1,0 +1,69 @@
+
+## 📘 **TỔNG HỢP LỆNH GDB HỮU ÍCH CHO STM32 (GDB + OpenOCD)**
+
+| **Lệnh**                                     | **Chức năng / Mục đích sử dụng**                             |
+| -------------------------------------------- | ------------------------------------------------------------ |
+| 🔗 **Kết nối & Giao tiếp**                   |                                                              |
+| `target remote localhost:3333`               | Kết nối tới OpenOCD qua cổng TCP (giao thức remote)          |
+| `monitor reset halt`                         | Reset chip và dừng ngay lập tức tại `Reset_Handler`          |
+| `monitor reset init`                         | Reset và chạy init script từ OpenOCD                         |
+| `monitor halt`                               | Dừng CPU ngay                                                |
+| `monitor resume`                             | Tiếp tục chạy CPU                                            |
+| `monitor arm semihosting enable`             | Bật semihosting (in qua `printf`)                            |
+| `monitor arm semihosting_fileio enable`      | Cho phép đọc/ghi file với semihosting                        |
+| 🔥 **Nạp chương trình & khởi động**          |                                                              |
+| `load`                                       | Nạp firmware (`.elf`) vào Flash                              |
+| `restore firmware.bin binary 0x08000000`     | Nạp file nhị phân vào Flash (dạng raw)                       |
+| `run` ❌                                      | ❌ KHÔNG dùng được với target embedded (thay bằng `continue`) |
+| 🚦 **Breakpoint & điều khiển thực thi**      |                                                              |
+| `break main` hoặc `b main`                   | Dừng tại hàm `main`                                          |
+| `break Reset_Handler`                        | Dừng ngay sau reset                                          |
+| `break *0x08000400`                          | Dừng tại địa chỉ cụ thể                                      |
+| `info breakpoints`                           | Xem danh sách các breakpoint đang hoạt động                  |
+| `delete <n>`                                 | Xóa breakpoint số `n`                                        |
+| `enable <n>` / `disable <n>`                 | Bật/tắt breakpoint                                           |
+| `continue` hoặc `c`                          | Tiếp tục chạy chương trình                                   |
+| `step` hoặc `s`                              | Thực hiện **1 dòng lệnh C**                                  |
+| `next` hoặc `n`                              | Thực hiện dòng hiện tại và **bỏ qua lời gọi hàm** bên trong  |
+| `stepi` hoặc `si`                            | Bước từng **lệnh máy (instruction)**                         |
+| `nexti` hoặc `ni`                            | Nhảy qua từng instruction (bỏ qua call)                      |
+| `finish`                                     | Chạy cho đến khi hàm hiện tại kết thúc                       |
+| 📍 **Thông tin chương trình**                |                                                              |
+| `info registers`                             | Hiển thị giá trị thanh ghi CPU                               |
+| `info locals`                                | Hiển thị biến local trong hàm hiện tại                       |
+| `info args`                                  | Hiển thị đối số truyền vào hàm                               |
+| `info frame`                                 | Xem ngữ cảnh stack frame hiện tại                            |
+| `info symbol 0x0800059a`                     | Tra cứu tên symbol tại địa chỉ                               |
+| 🧠 **Xem bộ nhớ & giá trị**                  |                                                              |
+| `x/4xw 0x08000000`                           | Xem 4 từ (word) 32-bit dạng hex từ địa chỉ 0x08000000        |
+| `x/16xb 0x20000000`                          | Xem 16 byte dạng hex tại địa chỉ RAM                         |
+| `x/s 0x20000000`                             | Xem chuỗi null-terminated tại địa chỉ                        |
+| `print var` hoặc `p var`                     | In giá trị biến `var`                                        |
+| `set var = value`                            | Gán giá trị cho biến                                         |
+| `set $pc = 0x08000000`                       | Đặt lại giá trị program counter (PC)                         |
+| 🔗 **Stack và gọi hàm**                      |                                                              |
+| `backtrace` hoặc `bt`                        | Hiển thị call stack hiện tại                                 |
+| `frame <n>`                                  | Chuyển sang frame số `n`                                     |
+| `return`                                     | Thoát khỏi hàm hiện tại và quay lại hàm gọi nó               |
+| 💬 **Semihosting & I/O**                     |                                                              |
+| `call initialise_monitor_handles()`          | Gọi hàm init semihosting (nếu đã có trong code)              |
+| `call printf("Hello\n")`                     | Gọi printf trực tiếp từ GDB nếu semihosting hoạt động        |
+| 🛠 **Thử nghiệm, chỉnh sửa tại runtime**     |                                                              |
+| `set {int}0x20000000 = 0xDEADBEEF`           | Ghi giá trị vào RAM trực tiếp                                |
+| `dump memory dump.bin 0x20000000 0x20000100` | Xuất 256 byte RAM thành file `dump.bin`                      |
+| 🔚 **Thoát & dọn dẹp**                       |                                                              |
+| `detach`                                     | Ngắt kết nối GDB khỏi target                                 |
+| `quit` hoặc `q`                              | Thoát GDB                                                    |
+
+---
+
+## ✅ Gợi ý `.gdbinit` mẫu để debug STM32 tự động:
+
+```gdb
+target remote localhost:3333
+monitor reset halt
+load
+break main
+monitor arm semihosting enable
+continue
+```

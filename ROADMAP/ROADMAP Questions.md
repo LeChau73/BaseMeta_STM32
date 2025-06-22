@@ -75,10 +75,20 @@ Dựa trên roadmap đã xây dựng từ tài liệu khóa học **Udemy: Maste
 ### Section 8: Giao diện Bus của MCU
 **Câu hỏi**:
 1. Nếu một peripheral trên APB1 (ví dụ: SPI2) không hoạt động do lỗi cấu hình bus clock, hãy mô tả một quy trình debug chi tiết để xác định nguyên nhân. Làm thế nào bạn sẽ xác minh rằng vấn đề không liên quan đến I-Code hoặc D-Code bus?
++++ I-Code hoặc D-Code bus là 2 bus chỉ truy cập đến SRAM và FLASH.
++++ Sử dụng con trỏ để truy cập đến thanh ghi cấu hình bus clock APB1 để đọc giá trị của thanh ghi. để xem thông tin chi tiết về thanh ghi này.
++++ Check thanh ghi BUS fault .
+
 2. Phân tích tác động của việc sử dụng S-Bus để truy cập FLASH thay vì I-Bus trong một ứng dụng thời gian thực. Hãy đưa ra một ví dụ cụ thể về cách lỗi này có thể ảnh hưởng đến hiệu suất và cách khắc phục.
++++ S-Bus là một bus đa năng có thể truy cập đến cả FLASH và SRAM và pherripheral khác.
+    ++ S-BUS không được tối ưu cho việc lấy lệnh cho nên độ trễ thấp khi truy cập FLASH.
++++ I-Bus chỉ truy cập đến FLASH và tối ưu cho việc lấy lệnh.
 3. Giả sử bạn cần tối ưu hóa tốc độ truyền dữ liệu giữa GPIO và USB OTG qua AHB1 và AHB2. Làm thế nào bạn sẽ cấu hình bus matrix để giảm độ trễ và tránh xung đột bus?
++++ Sử dụng thuật toán ROUND-ROBIN để tối ưu hóa tốc độ truyền dữ liệu.
 4. Trong trường hợp một peripheral trên APB2 gặp lỗi do xung đột với peripheral trên AHB1, hãy mô tả cách sử dụng bus matrix diagram và debugger để xác định nguyên nhân và đề xuất giải pháp.
++++ không biết cần giải thích thêm
 5. Đánh giá vai trò của việc hiểu rõ tốc độ bus (AHB, APB1, APB2) trong việc thiết kế một hệ thống nhúng yêu cầu truyền dữ liệu tốc độ cao. Hãy đưa ra một ví dụ cụ thể về cách tối ưu hóa bus speed.
++++ Hiểu rõ tốc độ bus AHB, APB1, APB2 sẽ giúp thiết kế hệ thống đúng với slave tương ứng cần với tốc độ đó ,từ đó giảm chi phí và thời gian
 
 ---
 
