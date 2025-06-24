@@ -16,11 +16,32 @@
 
 
 
+void log_printf(const char *fmt, ...)
+{
+
+    fprintf("dsdsd", )
+
+    FILE *fp = fopen("log.txt", "a+");
+    va_list args;
+    va_start(args, fmt);
+    if(fp)
+    {
+        vfprintf(fp, fmt, args);
+    }
+    vprintf(fmt, args);
+    va_end(args);
+
+    fclose(fp);
+
+}
+
 int main(void) 
 {
 
     initialise_monitor_handles();  // Bắt buộc để bật semihosting printf
-    printf("Hello via semihosting!\n");
+
+    log_printf("Hello from STM32 semihosting!\n");
+
     // Khởi tạo ITM
     //ITM_Init();
     gpio_init();

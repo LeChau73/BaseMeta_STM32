@@ -12,7 +12,8 @@ DEBUG = 1
 SRC_DIR = \
 	Core/Src \
 	Drivers/Src \
-	Drivers/STM32F411VE_Driver/Src
+	Drivers/STM32F411VE_Driver/Src \
+	Core/lib
 
 INC_DIR = \
 	Core/Inc \
@@ -139,6 +140,8 @@ debug: $(TARGET).elf
 		-ex "monitor arm semihosting enable" \
 		-ex "monitor reset halt" \
 		-ex "load"
+		-ex "break main" \
+		-ex "continue" \
 		-ex "break main" \
 		-ex "continue"
 
