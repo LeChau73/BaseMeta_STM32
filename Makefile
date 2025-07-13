@@ -8,6 +8,8 @@ OBJDUMP = $(PREFIX)objdump
 SIZE = $(PREFIX)size
 DEBUG = 1
 
+BUILD_TIME := $(shell date +%Y%m%d__%H%M%S)
+
 # Thư mục dự án
 SRC_DIR = \
 	Core/Src \
@@ -71,6 +73,7 @@ TARGET = $(BUILD_DIR)/firmware
 
 # Mục tiêu mặc định
 all: $(BUILD_DIR) $(TARGET).elf $(TARGET).hex $(TARGET).bin size
+	@echo "-----BUILD COMPLETE FOR STM32F411VE $(BUILD_TIME)------"
 
 # Tạo thư mục build
 $(BUILD_DIR):
@@ -113,6 +116,7 @@ OPEN_OCD = $(PATH_OCD)/bin/openocd.exe
 STLINK_PATH = $(PATH_OCD)/share/openocd/scripts/interface
 TARGET_PATH = $(PATH_OCD)/share/openocd/scripts/target
 OPEN_OCDLINUX = openocd
+PYTHON = python.exe
 
 # Mục tiêu flash
 flash: $(TARGET).bin
@@ -120,7 +124,14 @@ flash: $(TARGET).bin
 
 
 connect_window:
-	 $(OPEN_OCD) -f $(STLINK_PATH)/stlink.cfg -f $(TARGET_PATH)/stm32f4x.cfg
+	$(OPEN_OCD) -f $(STLINK_PATH)/stlink.cfg -f $(TARGET_PATH)/stm32f4x.cfg -f $(CURDIR)/openocd.cfg
+
+connect:
+	$(OPEN_OCD) -f $(CURDIR)/openocd.cfg
+
+convert:
+	$(PYTHON) *.py
+	code *.txt
 
 connect_linux:
 	$(OPEN_OCDLINUX) -f /usr/share/openocd/scripts/interface/stlink.cfg -f /usr/share/openocd/scripts/target/stm32f4x.cfg
@@ -137,7 +148,7 @@ debug: $(TARGET).elf
 		-ex "set confirm off" \
 		-ex "directory $(CURDIR)/Core/Src" \
 		-ex "target remote localhost:3333" \
-		-ex "monitor arm semihosting enable" \
+		-ex "monitor tpiu config internal output_itm.txt uart off 16000000 2000000" \
 		-ex "monitor reset halt" \
 		-ex "load"
 		-ex "break main" \

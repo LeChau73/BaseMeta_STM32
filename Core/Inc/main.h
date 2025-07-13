@@ -3,6 +3,7 @@
 #include "stdio.h"
 #include "stdlib.h"
 #include "stdint.h"
+#include "stm32f4xx_itm.h"
 #include "../Src/semi_io.c"
 
 extern void initialize_monitor_handles(void);

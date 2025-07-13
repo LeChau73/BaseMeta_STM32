@@ -11,7 +11,20 @@
 | `monitor resume`                             | Tiếp tục chạy CPU                                            |
 | `monitor arm semihosting enable`             | Bật semihosting (in qua `printf`)                            |
 | `monitor arm semihosting_fileio enable`      | Cho phép đọc/ghi file với semihosting                        |
-| 🔥 **Nạp chương trình & khởi động**          |                                                              |
+|
+monitor semihosting enable
+monitor arm semihosting_fileio enable
+monitor arm semihosting redirect output.txt
+
+# Cấu hình SWO (tần số CPU = 16 MHz, SWO baud rate = 2 MHz)
+monitor tpiu config internal output_itm.txt uart off 16000000 2000000
+    internal: dùng bộ giải mã nội bộ của OpenOCD.
+    output_itm.txt: file lưu dữ liệu ITM/SWO (debug trace, printf, v.v.).
+    uart off: không dùng chế độ UART cho SWO (chỉ dùng SWO).
+    16000000: tần số CPU (16 MHz).
+    2000000: tốc độ baud SWO (2 MHz).
+
+ 🔥 **Nạp chương trình & khởi động**          |                                                              |
 | `load`                                       | Nạp firmware (`.elf`) vào Flash                              |
 | `restore firmware.bin binary 0x08000000`     | Nạp file nhị phân vào Flash (dạng raw)                       |
 | `run` ❌                                      | ❌ KHÔNG dùng được với target embedded (thay bằng `continue`) |
