@@ -39,3 +39,14 @@ monitor tpiu config internal output_itm.txt uart off 16000000 2000000
     + Tự viết hàm write ,print để debug dễ hơn
     + Hiểu xong ITM => GPIO => UART ....
     + Từng bước một,chậm thôi
+
+
+19/7
+    + DWT
+        => 4 bộ so sánh 
+            - hardware watchpoint 
+            - ETM trigger
+            - PC sample event triggle
+            - data address sample event trigger
+        Và cũng có thể clock cycle counter ,CYCCNT
+            - data compare

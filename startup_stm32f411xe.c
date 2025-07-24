@@ -64,6 +64,8 @@ void Reset_Handler(void)
         *pDest++ = 0;
     }
 
+    //Khởi tạo các thành phần cần thiết của thư viện C (ví dụ: newlib).
+    //Đảm bảo môi trường runtime C/C++ sẵn sàng trước khi vào main().
     __libc_init_array();
 
     // 3. Gọi main

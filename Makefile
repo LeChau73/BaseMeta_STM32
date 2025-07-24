@@ -172,5 +172,7 @@ debug_linux: $(TARGET).elf
 		-ex "break main" \
 		-ex "continue"
 
+cleanfile:
+	@> output_itm.txt
 
 .PHONY: all clean size dump flash debug

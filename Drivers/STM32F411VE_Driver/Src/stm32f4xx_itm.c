@@ -3,92 +3,62 @@
 #include <stdarg.h>
 #include <stdint.h>
 
-void Init_ITM(uint8_t port, uint8_t prescaler) {
-    // This function initializes the Instrumentation Trace Macrocell (ITM) for tracing.
-    // It enables the ITM and SWO (Single Wire Output) trace modes.
-    // The function configures the specified port and prescaler for trace operations.
-    
-    // Check if port is valid (0-31)
-    if (port > 31) {
-        // Invalid port number, return without initializing
-        return;
-    }
-    // Check if prescaler is valid (0-7)
-    if (prescaler > 7) {
-        // Invalid prescaler value, return without initializing
-        return;
+void ITM_Init(bool enable_timestamp)
+{
+    // DBGMCU_CR 
+    // Enable for trace asynchronous mode
+    *(uint32_t*)0xE0042004 |= (1 << 5);
+
+    // Unlock write access to other ITM register
+    *(uint32_t*)0xE0000FB0 = 0xC5ACCE55; 
+
+    if ( enable_timestamp == true )
+    {
+        //setting for timestamp
+        *(uint32_t*)0xE0000E80 |= (1 << 1);
     }
 
-    // Translate port to mask
-    uint32_t mask = 1 << port;
-    
-    // Enable TRCEN
-    CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;
-    
-    //Unlock ITM
-    ITM->LAR = 0xC5ACCE55;
-    // Enable ITM trace : Can write to ITM
-    ITM->TCR |= ITM_TCR_ITMENA_Msk;
-    // Enable SWO trace
-    ITM->TCR |= ITM_TCR_SWOENA_Msk;
-    // Enable port
-    ITM->TPR |= mask;
+    // Control registers
+    *(uint32_t*)0xE0000E80 |= ( (1 << 3) | (1 << 16) | (1 << 0) );
 
-    // Configure frequency prescaler for trace (assuming 16MHz default clock)
-    //TPI->ACPR = (16000000 / 8000000) - 1;  // For 4MHz trace clock
-    // Configure mode for trace
-    TPI->SPPR |= TPI_SPPR_TXMODE_Msk;
+    // ITM_TER: Enable port 0
+    *(volatile uint32_t *)0xE0000E00 = (1 << 0) | (1 << 1); // Enable port 0 và 1
 
 }
 
-void ITM_SendChar(uint32_t c, uint8_t port) {
-    // Check if ITM is enabled
-    if (!(ITM->TCR & ITM_TCR_ITMENA_Msk)) {
-        return;
-    }
 
-    // Check if port is enabled
-    if (!(ITM->TER & (1UL << port))) {
-        return;
-    }
 
-    // Check if ITM is busy
-    while (ITM->TCR & ITM_TCR_BUSY_Msk) {
-        // Wait for ITM to be ready
-    }
 
+void ITM_SendChar(uint32_t c) {
     // Wait until port is available for transmission
         // 0 = full
         // 1 = not full.
-    while (!(ITM->PORT[port].u32 & (1UL << 0))) {
+    while (!(ITM->PORT[0].u32 & (1UL << 0))) {
         // Wait until port is ready
     }
 
     // Send char
-    ITM->PORT[port].u8 = (uint8_t)c;
+    ITM->PORT[0].u8 = (uint8_t)c;
 }
+
+
+int _write(int file, char *ptr, int len) {
+    for (int i = 0; i < len; i++) {
+        ITM_SendChar(ptr[i]);
+    }
+    return len;
+}
+
 
 void ITM_SendString(const char* str,uint8_t port)
 {
     while( *str != '\0' )
     {
-        ITM_SendChar(*str++, port);
+        ITM_SendChar(*str++);
     }
 }
 
-// Send a 32-bit integer as ASCII string via ITM
-void ITM_SendInt(int32_t num, uint8_t port) {
-    char buf[12]; // Enough for -2147483648\0
-    snprintf(buf, sizeof(buf), "%ld", (long)num);
-    ITM_SendString(buf, port);
-}
 
-// Send a buffer of bytes via ITM
-void ITM_SendBuffer(const uint8_t* buffer, uint32_t size, uint8_t port) {
-    for (uint32_t i = 0; i < size; i++) {
-        ITM_SendChar(buffer[i], port);
-    }
-}
 
 // Enable a specific ITM port
 void ITM_EnablePort(uint8_t port) {
@@ -111,21 +81,17 @@ uint8_t ITM_IsPortEnabled(uint8_t port) {
 }
 
 // Send a 16-bit value via ITM
-void ITM_SendHalfWord(uint16_t data, uint8_t port) {
-    ITM->PORT[port].u16 = data;
+void ITM_SendHalfWord(uint16_t data) {
+    while (!(ITM->PORT[0].u32 & (1UL << 0))) {
+        // Wait until port is ready
+    }
+    ITM->PORT[0].u16 = data;
 }
 
 // Send a 32-bit value via ITM
-void ITM_SendWord(uint32_t data, uint8_t port) {
-    ITM->PORT[port].u32 = data;
-}
-
-// Send formatted string via ITM
-void ITM_Printf(uint8_t port, const char* format, ...) {
-    char buffer[128]; // Adjust buffer size as needed
-    va_list args;
-    va_start(args, format);
-    vsnprintf(buffer, sizeof(buffer), format, args);
-    va_end(args);
-    ITM_SendString(buffer, port);
+void ITM_SendWord(uint32_t data) {
+    while (!(ITM->PORT[0].u32 & 1)) {
+        // Wait until stimulus port is ready (not full)
+    }
+    ITM->PORT[0].u32 = data;
 }

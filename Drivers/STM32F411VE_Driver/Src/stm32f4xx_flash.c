@@ -81,6 +81,3 @@ static void FLASH_MassErase(uint8_t VoltageRange)
   FLASH->CR |= FLASH_CR_MER;
   FLASH->CR |= FLASH_CR_STRT | ((uint32_t)VoltageRange << 8U);
 }
-
-
-static void Flash_Programming()
