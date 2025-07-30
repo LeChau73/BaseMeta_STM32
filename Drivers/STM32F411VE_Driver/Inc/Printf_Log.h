@@ -6,6 +6,12 @@ extern "C" {
 #endif
 
 
+#include "stm32f4xx_itm.h"
+#include <stdint.h>
+#include <stdio.h>
+#include <stddef.h>
+#include <stdarg.h>
+#include <string.h>
 
 typedef enum
 {
@@ -16,13 +22,18 @@ typedef enum
 
 #define MAX_SIZE_BUFF 64
 
-
-char *int_to_string(int num, char *buffer, int* size);
+void led_on(uint8_t pin);
+void led_off(uint8_t pin);
+void debug_by_led(void);
+void gpio_init(void);
+char *int_to_string(int num, char *buffer);
+void myprintf(const char* fmt, ...);
 // Function prototypes
 void PrintfLog_Init(void);
-void Printf_Int( int value );
+void print_int( int value );
 
-
+#define GPIOD_BASE     0x40020C00UL
+#define GPIOD_BSRR     (*(volatile unsigned int *)(GPIOD_BASE + 0x18))
 
 
 #ifdef __cplusplus
