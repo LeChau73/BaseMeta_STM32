@@ -27,7 +27,9 @@ void led_off(uint8_t pin);
 void debug_by_led(void);
 void gpio_init(void);
 char *int_to_string(int num, char *buffer);
-void myprintf(const char* fmt, ...);
+void myPrintf(const char* fmt, ...);
+char* convert_hex_to_string(uint32_t value, char* buffer);
+void hex_to_ascii_bytes(uint32_t value, char* buffer);
 // Function prototypes
 void PrintfLog_Init(void);
 void print_int( int value );

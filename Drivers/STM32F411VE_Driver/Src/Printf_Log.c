@@ -1,8 +1,5 @@
 #include "Printf_Log.h"
 
-
-
-
 // Hàm chuyển đổi int sang chuỗi (cơ số 10)
 char *int_to_string(int num, char *buffer) {
     if (num == 0) {
@@ -68,21 +65,32 @@ void print_int(int value)
 
 }
 
+/**
+ * @brief Chau Code ^-^
+ * @details bởi vì máy sẽ lưu dạng bit nên kiểu int thực ra nếu view cx là hex : 0x2001ffbc
+ * @param value 
+ * @param buffer 
+ * @return char* 
+ */
 char* convert_hex_to_string(uint32_t value, char* buffer)
 {
-    //: Lưu vào int
-    // Dịch 4bit một để tách
-    // Sau đó dùng cơ chế chuyển từ số sang hex 
+    //[x]: Code cho chạy đã
+    //[ ]: Optimazit cách tối ưu
+    //: Lưu vào int : (0x2001ffbc)
+    // Dịch 4bit một để tách 0xc
+    // Sau đó dùng cơ chế chuyển từ số sang unicode or utf-8 
     // số thì + '0' || chữ thì + 'a', số đó phải % 10 để lấy dư
     // lưu nó vào buffer => in ra thôi
-
+    buffer[0] = '0';
+    buffer[1] = 'x';
     uint8_t haft_byte;
 
-
-    for (uint8_t i = 9; i > 0; i--)
+    //4byte => [4byte] => 8 haftbyte[1111]
+    for (uint8_t i = 9; i > 1; i--)
     {
-        haft_byte &= 0x0F;
-        haft_byte |= (value >> 4);
+        haft_byte = 0;
+        haft_byte |= (value & 0x0F);
+        value = value >> 4;
 
         if ( haft_byte >= 10 )
         {
@@ -92,13 +100,27 @@ char* convert_hex_to_string(uint32_t value, char* buffer)
         {
             buffer[i] = (haft_byte % 10) + '0';
         }
+
     }
-    
+
+    buffer[10] = '\0';
+}
+
+/**
+ * @brief AI code =)))
+ * @param value 
+ * @param buffer 
+ */
+void hex_to_ascii_bytes(uint32_t value, char* buffer) {
+    // Lấy từng byte từ giá trị 32-bit và chuyển thành ký tự
+    buffer[0] = (char)((value >> 24) & 0xFF); // Byte cao nhất
+    buffer[1] = (char)((value >> 16) & 0xFF);
+    buffer[2] = (char)((value >> 8) & 0xFF);
+    buffer[3] = (char)(value & 0xFF);         // Byte thấp nhất
+    buffer[4] = '\0'; // Kết thúc chuỗi
 }
 
 
-//TODO: Thử custom hàm va_start xem 
-//date: 24/7 Thứ 5 (Tối)
 
 /**
  * @brief Variadic function
@@ -112,68 +134,68 @@ char* convert_hex_to_string(uint32_t value, char* buffer)
  * %p  : Địa chỉ con trỏ (pointer)
  * %%  : In ra ký tự %
  */
-void myprintf ( const char* fmt, ... )
+//TODO: Debug cho cách code mới
+void myPrintf ( const char* fmt, ... )
 {
     char* find_charac = fmt;
     bool check_condition = true;
     char* token;
 
-    
-    while( ( find_charac = strchr(find_charac, '%') ) != NULL )
-    {
-        find_charac++;
-        if (strchr("dxscp", *find_charac)) {
-            // Đúng nếu là một trong các ký tự trên
-            check_condition = false;
-            break;
-        }
-    }
-    
-    if ( check_condition == true )
-    {
-        ITM_SendString(fmt);
-        return;
-    }
-
-
-    // Đối tượng cho variadic
     va_list list_va;
-
-    // Cho phép truy cập đến các biến argument 
-    // Truy cập vào các biến trong ...(lưu vào list_va) được chỉ dẫn bởi fmt 
     va_start(list_va, fmt);
 
-    //const char* delim = "%";
-
-
-    token = strtok(fmt , "%");
-
-    while ( token )
+    while(*fmt)
     {
-        
-        if ( *token == 'd' )
+        if (*fmt == '%')
         {
-            int i = va_arg( list_va, int );
-            print_int(i);
+            fmt++;
+            switch (*fmt)
+            {
+                //@: Xử lý tại ký tự sau % tức là : "%d" => đang xử lý tại d
+                case 'd': {
+                    int i = va_arg(list_va , int );
+                    print_int(i);
+                    break;
+                }
+                case 'x': { //TODO:
+                    int i = va_arg(list_va , int );
+                    char buffer_temp[10];
+                    convert_hex_to_string(i, buffer_temp);
+                    ITM_SendString(buffer_temp);
+                    break;
+                }
+                case 'c': {
+                    char c = va_arg(list_va , char );
+                    ITM_SendChar(c);
+                    break;
+                }
+                case 's': {
+                    const char* str = va_arg( list_va, char* );
+                    ITM_SendString(str);
+                    break;
+                }
+                case 'p': {
+                    int i = va_arg(list_va , int );
+                    char buffer_temp[10];
+                    convert_hex_to_string(i, buffer_temp);
+                    print_int(i);
+                    break;
+                }
+                case '%':
+                    ITM_SendString((char[]){"%%\0"});
+                    break;
+                default:
+                    ITM_SendChar('%');
+                    // CHeck đoạn code này
+                    //INFOR: (char[]){*fmt, 0} caller compound literal
+                    ITM_SendString((char[]){*fmt, 0});
+                    break;
+            }
+        } else {
+            ITM_SendString((char[]){*fmt, 0});
         }
-        else if ( *token == 's' )
-        {
-            const char* str = va_arg( list_va, char* );
-            ITM_SendString(str);
-        }
-        else if ( *token == 'p' )
-        {
-            // TC : myprintf("%x", &val);
-            uint32_t temp = va_arg( list_va, uint32_t );
-           // ITM_SendString(temp);
-            //print_int(temp);
-
-        }
-        
-
-        token = strtok(NULL , "%");
+        fmt++;
     }
-
 
     va_end(list_va);
 

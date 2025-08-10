@@ -50,7 +50,7 @@ int _write(int file, char *ptr, int len) {
 }
 
 
-void ITM_SendString(const char* str,uint8_t port)
+void ITM_SendString(const char* str)
 {
     while( *str != '\0' )
     {

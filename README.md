@@ -50,3 +50,5 @@ monitor tpiu config internal output_itm.txt uart off 16000000 2000000
             - data address sample event trigger
         Và cũng có thể clock cycle counter ,CYCCNT
             - data compare
+
+//TODO: //FIXME //HACK //DEBUG //BUG //XXX //[ ] //[x] //INFOR

@@ -18,7 +18,7 @@ extern "C"
 void ITM_Init(bool enable_timestamp);
 int _write(int file, char *ptr, int len);
 void ITM_SendChar(uint32_t c); 
-void ITM_SendString(const char* str, uint8_t port);
+void ITM_SendString(const char* str);
 void ITM_SendInt(int32_t num, uint8_t port);
 void ITM_SendBuffer(const uint8_t* buffer, uint32_t size, uint8_t port);
 void ITM_EnablePort(uint8_t port);

@@ -23,6 +23,15 @@ extern uint32_t _ebss;      // Địa chỉ kết thúc .bss
 extern int main(void);
 extern void __libc_init_array(void);
 
+#define RCC_BASE       0x40023800UL
+#define GPIOD_BASE     0x40020C00UL
+#define RCC_AHB1ENR    (*(volatile unsigned int *)(RCC_BASE + 0x30))
+#define GPIOD_MODER    (*(volatile unsigned int *)(GPIOD_BASE + 0x00))
+#define GPIOD_OTYPER   (*(volatile unsigned int *)(GPIOD_BASE + 0x04))
+#define GPIOD_OSPEEDR  (*(volatile unsigned int *)(GPIOD_BASE + 0x08))
+#define GPIOD_PUPDR    (*(volatile unsigned int *)(GPIOD_BASE + 0x0C))
+#define GPIOD_ODR      (*(volatile unsigned int *)(GPIOD_BASE + 0x14))
+
 // Default handler for interrupts
 void Default_Handler(void) {
     while(1);
@@ -42,6 +51,27 @@ void (* const g_pfnVectors[])(void) = {
     NMI_Handler,                 /* Non-Maskable Interrupt */
     HardFault_Handler,           /* Hard Fault */
 };
+
+
+void gpio_init(void)
+{
+    // Bật clock GPIOD (bit 3 trong RCC_AHB1ENR)
+    RCC_AHB1ENR |= (1 << 3);
+
+    // MODER: set PD12 - PD15 là output (01)
+    GPIOD_MODER &= ~(0xFF << 24);   // Clear 4 chân (2 bit mỗi chân)
+    GPIOD_MODER |=  (0x55 << 24);   // Set 01 cho từng chân
+
+    // OTYPER: push-pull
+    GPIOD_OTYPER &= ~(0xF << 12);   // Clear bit 12-15
+
+    // OSPEEDR: tốc độ medium (01)
+    GPIOD_OSPEEDR &= ~(0xFF << 24);
+    GPIOD_OSPEEDR |=  (0x55 << 24);
+
+    // PUPDR: no pull (00)
+    GPIOD_PUPDR &= ~(0xFF << 24);
+}
 
 
 
@@ -67,6 +97,8 @@ void Reset_Handler(void)
     //Khởi tạo các thành phần cần thiết của thư viện C (ví dụ: newlib).
     //Đảm bảo môi trường runtime C/C++ sẵn sàng trước khi vào main().
     __libc_init_array();
+
+    gpio_init();
 
     // 3. Gọi main
     main();

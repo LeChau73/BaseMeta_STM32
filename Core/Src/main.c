@@ -19,7 +19,6 @@
 
 
 
-
 void DWT_DataMaching(int value,volatile void* addrOfValue)
 {
     *(volatile uint32_t *)0xE0000FB0 = 0xC5ACCE55; // DWT_LAR: Unlock DWT
@@ -35,28 +34,27 @@ void DWT_DataMaching(int value,volatile void* addrOfValue)
 int main(void) 
 {
 
-    // Khởi tạo ITM
-    //Init_ITM(0, 32);
-    gpio_init();
+    
 
     ITM_Init(true);
     // Vòng lặp chính
     char buffer[32];
     volatile int counter = 1;
-    printf("Hello, ITM!\n");
-
+    const char *str = "11 á chau";
+    //myPrintf("Hello, ITM!\n");
+    //myPrintf("Hell%h, ITM!%k\n");
+    //myPrintf("%s", "le hong chau\n");
     int val = 10;
+    led_on(12);
     // Dùng sprintf
 
     DWT_DataMaching(2, &counter);
     while (1) {
-
-        //: đưa ra số hex gửi 2 byte một lúc
-        ITM_SendHalfWord(5658);
-    
-        led_on(12);
-        for (volatile int i = 0; i < 1000000; i++); // Delay giả lập
         led_off(12);
+        myPrintf("%x", 434343);
+        //myPrintf("Hello, ITM!\n");
+        for (volatile int i = 0; i < 1000000; i++); // Delay giả lập
+        led_on(12);
         for (volatile int i = 0; i < 1000000; i++); // Delay giả lập
     }
 
@@ -64,38 +62,6 @@ int main(void)
 }
 
 
-
-
-void gpio_init(void)
-{
-    // Bật clock GPIOD (bit 3 trong RCC_AHB1ENR)
-    RCC_AHB1ENR |= (1 << 3);
-
-    // MODER: set PD12 - PD15 là output (01)
-    GPIOD_MODER &= ~(0xFF << 24);   // Clear 4 chân (2 bit mỗi chân)
-    GPIOD_MODER |=  (0x55 << 24);   // Set 01 cho từng chân
-
-    // OTYPER: push-pull
-    GPIOD_OTYPER &= ~(0xF << 12);   // Clear bit 12-15
-
-    // OSPEEDR: tốc độ medium (01)
-    GPIOD_OSPEEDR &= ~(0xFF << 24);
-    GPIOD_OSPEEDR |=  (0x55 << 24);
-
-    // PUPDR: no pull (00)
-    GPIOD_PUPDR &= ~(0xFF << 24);
-}
-
-
-void led_on(uint8_t pin) 
-{
-    GPIOD_BSRR = (1 << pin);         // Set pin (ON)
-}
-
-void led_off(uint8_t pin) 
-{
-    GPIOD_BSRR = (1 << (pin + 16));  // Reset pin (OFF)
-}
 
 
 
