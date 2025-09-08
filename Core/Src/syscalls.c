@@ -24,11 +24,6 @@ int _read(int file, char *ptr, int len)
     return 0;
 }
 
-int _write(int file, char *ptr, int len)
-{
-    return 0;
-}
-
 int _lseek(int file, int ptr, int dir)
 {
     return 0;
@@ -59,3 +54,4 @@ int _fstat(int file, struct stat *st) {
 int _isatty(int file) {
     return 1; // luôn cho là terminal
 }
+

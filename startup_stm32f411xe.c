@@ -96,7 +96,7 @@ void Reset_Handler(void)
 
     //Khởi tạo các thành phần cần thiết của thư viện C (ví dụ: newlib).
     //Đảm bảo môi trường runtime C/C++ sẵn sàng trước khi vào main().
-    __libc_init_array();
+    //__libc_init_array();
 
     gpio_init();
 

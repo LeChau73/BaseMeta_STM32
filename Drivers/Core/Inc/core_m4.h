@@ -176,7 +176,10 @@ typedef struct
 
 
 
-
+typedef struct
+{
+  //__IO uint32_t 
+} a;
 
 
 
@@ -203,7 +206,23 @@ typedef struct
 
 #define PERIPH_BASE           0x40000000UL /*!< Peripheral base address in the alias region */
 #define AHB1PERIPH_BASE       (PERIPH_BASE + 0x00020000UL)
+#define AHB1PERIPH_BASE       (PERIPH_BASE + 0x00020000UL)
 #define FLASH_R_BASE          (AHB1PERIPH_BASE + 0x3C00UL)
+
+#define RCC_BASE           0x40023800UL
+#define RCC_AHB1ENR        RCC_BASE + 0x30
+                                        
+#define GPIOA              PERIPH_BASE + 0x00020000UL
+#define GPIOB              PERIPH_BASE + 0x00020400UL
+#define GPIOC              PERIPH_BASE + 0x00020800UL
+#define GPIOD              PERIPH_BASE + 0x00020C00UL
+
+
+
+
+
+
+
 
 
 

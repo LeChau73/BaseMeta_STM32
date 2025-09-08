@@ -1,5 +1,5 @@
-#ifndef PRINTF_LOG_H
-#define PRINTF_LOG_H
+#ifndef LOG_H
+#define LOG_H
 
 #ifdef __cplusplus
 extern "C" {

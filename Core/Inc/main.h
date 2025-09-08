@@ -5,8 +5,11 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include "stm32f4xx_itm.h"
+#include "stm32f4xx_gpio.h"
+#include "core_m4.h"
 #include "../Src/semi_io.c"
-#include "Printf_Log.h"
+#include "log.h"
+#include "debugFunc.h"
 
 extern void initialize_monitor_handles(void);
 

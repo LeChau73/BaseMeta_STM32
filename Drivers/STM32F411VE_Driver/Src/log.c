@@ -1,4 +1,4 @@
-#include "Printf_Log.h"
+#include "log.h"
 
 // Hàm chuyển đổi int sang chuỗi (cơ số 10)
 char *int_to_string(int num, char *buffer) {

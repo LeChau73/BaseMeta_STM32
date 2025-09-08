@@ -20,7 +20,8 @@ SRC_DIR = \
 INC_DIR = \
 	Core/Inc \
 	Drivers/Core/ \
-	Drivers/STM32F411VE_Driver/Inc
+	Drivers/STM32F411VE_Driver/Inc \
+	Drivers/Core/Inc \
 
 BUILD_DIR = build
 
@@ -32,11 +33,11 @@ CPU = -mcpu=cortex-m4
 FPU = -mfpu=fpv4-sp-d16 -mfloat-abi=hard
 CFLAGS = $(CPU) -mthumb $(FPU) \
          -Wall -Wextra \
-         -O0 -g \
+         -O3 -g \
          $(foreach dir,$(INC_DIR),-I$(dir)) \
          -std=gnu11
 
-semihosting = 1
+semihosting = 0
 
 # Cờ liên kết
 LDFLAGS = $(CPU) -mthumb $(FPU) \
@@ -44,7 +45,7 @@ LDFLAGS = $(CPU) -mthumb $(FPU) \
           -Wl,-Map=$(BUILD_DIR)/output.map
 
 ifeq ($(semihosting),0)
-LDFLAGS += -specs=nano.specs -lc
+LDFLAGS += -nostdlib -specs=nano.specs -lgcc
 else
 LDFLAGS += -specs=rdimon.specs -lc -lrdimon
 endif
@@ -101,7 +102,9 @@ $(TARGET).bin: $(TARGET).elf
 
 # Hiển thị kích thước
 size: $(TARGET).elf
-	$(SIZE) $<
+	$(SIZE) $< 
+	@echo "Saving size information to $(TARGET)_size.txt"
+	$(SIZE) $< > $(TARGET)_size.txt
 
 # Dọn dẹp
 clean:
