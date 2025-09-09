@@ -6,8 +6,8 @@
 void GPIO_Init(GPIO_Pin_t* gpiox, GPIO_Config* gpio_config)
 {
     //Check condition exception
-    if (gpiox == NULL || gpio_config == NULL )
-        return 0;
+    if (gpiox == 0 || gpio_config == 0 )
+        return ;
 
     uint16_t pos = 0;
 

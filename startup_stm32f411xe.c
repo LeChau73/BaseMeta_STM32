@@ -1,5 +1,6 @@
 #include "stdio.h"
 #include "stdint.h"
+#include "core_m4.h"
 
 #define C1
 
@@ -23,9 +24,8 @@ extern uint32_t _ebss;      // Địa chỉ kết thúc .bss
 extern int main(void);
 extern void __libc_init_array(void);
 
-#define RCC_BASE       0x40023800UL
 #define GPIOD_BASE     0x40020C00UL
-#define RCC_AHB1ENR    (*(volatile unsigned int *)(RCC_BASE + 0x30))
+#define RCC_AHB1EN      (*(volatile unsigned int *)(RCC_BASE + 0x30))
 #define GPIOD_MODER    (*(volatile unsigned int *)(GPIOD_BASE + 0x00))
 #define GPIOD_OTYPER   (*(volatile unsigned int *)(GPIOD_BASE + 0x04))
 #define GPIOD_OSPEEDR  (*(volatile unsigned int *)(GPIOD_BASE + 0x08))
@@ -56,7 +56,7 @@ void (* const g_pfnVectors[])(void) = {
 void gpio_init(void)
 {
     // Bật clock GPIOD (bit 3 trong RCC_AHB1ENR)
-    RCC_AHB1ENR |= (1 << 3);
+    RCC_AHB1EN |= (1 << 3);
 
     // MODER: set PD12 - PD15 là output (01)
     GPIOD_MODER &= ~(0xFF << 24);   // Clear 4 chân (2 bit mỗi chân)

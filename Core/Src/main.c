@@ -66,8 +66,6 @@ int main(void)
     char buffer[32];
     volatile int counter = 1;
     
-
-    led_on(12);
     // Dùng sprintf
 
 
@@ -100,11 +98,12 @@ int main(void)
 
 void configGpio()
 {
-    //Enable clock
-    volatile uint32_t* rcc_gpio = RCC_AHB1ENR;
-    *rcc_gpio |= GPIOD;
 
-    GPIO_Pin_t gpio = { GPIOD , GPIO_PIN_12 | GPIO_PIN_13 | GPIO_PIN_14};
+    //Enable clock
+    volatile uint32_t* rcc_gpio = (volatile uint32_t*)RCC_AHB1ENR;
+    *rcc_gpio |= RCC_GPIODEN;
+
+    GPIO_Pin_t gpio = { GPIOD , GPIO_PIN_12 | GPIO_PIN_13 | GPIO_PIN_14 | GPIO_PIN_15};
     GPIO_Config config = { OUTPUT_PP, 0, MEDIUM_SPEED, 0};
 
     GPIO_Init(&gpio , &config);

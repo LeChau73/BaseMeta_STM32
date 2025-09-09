@@ -204,18 +204,17 @@ typedef struct
 #define TPI_BASE            (0xE0040000UL)            /*!< TPI Base Address */
 #define CoreDebug_BASE      (0xE000EDF0UL)                            /*!< Core Debug Base Address */
 
-#define PERIPH_BASE           0x40000000UL /*!< Peripheral base address in the alias region */
-#define AHB1PERIPH_BASE       (PERIPH_BASE + 0x00020000UL)
+#define PERIPH_BASE           (0x40000000UL) /*!< Peripheral base address in the alias region */
 #define AHB1PERIPH_BASE       (PERIPH_BASE + 0x00020000UL)
 #define FLASH_R_BASE          (AHB1PERIPH_BASE + 0x3C00UL)
 
-#define RCC_BASE           0x40023800UL
+#define RCC_BASE           0x40023800
 #define RCC_AHB1ENR        RCC_BASE + 0x30
                                         
-#define GPIOA              PERIPH_BASE + 0x00020000UL
-#define GPIOB              PERIPH_BASE + 0x00020400UL
-#define GPIOC              PERIPH_BASE + 0x00020800UL
-#define GPIOD              PERIPH_BASE + 0x00020C00UL
+#define GPIOA              (volatile GPIO_TypeDef* )(PERIPH_BASE + 0x00020000UL)
+#define GPIOB              (volatile GPIO_TypeDef* )(PERIPH_BASE + 0x00020400UL)
+#define GPIOC              (volatile GPIO_TypeDef* )(PERIPH_BASE + 0x00020800UL)
+#define GPIOD              (volatile GPIO_TypeDef* )(PERIPH_BASE + 0x00020C00UL)
 
 
 
