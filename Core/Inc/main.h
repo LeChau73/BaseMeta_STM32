@@ -10,6 +10,7 @@
 #include "../Src/semi_io.c"
 #include "log.h"
 #include "debugFunc.h"
+#include "SEGGER_RTT.h"
 
 extern void initialize_monitor_handles(void);
 

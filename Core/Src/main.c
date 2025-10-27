@@ -1,4 +1,5 @@
 #include "main.h"
+#include <stdarg.h>
 
 #define SET_BIT(reg, bit)    (reg |= (1 << bit))
 
@@ -7,23 +8,16 @@
 #define RCC_PLLCFGR         (*(volatile uint32_t*)0x40023804)
 #define RCC_CFGR            (*(volatile uint32_t*)0x40023808)
 
+#define RTT_printf(...)  SEGGER_RTT_printf(0,__VA_ARGS__)
+#define LOG_REG(name) SEGGER_RTT_printf(0, #name " = 0x%08X\n", (unsigned int)(name))  //for register
+//%08X là một định dạng cho printf:
+//%X : in số nguyên không dấu dưới dạng thập lục phân chữ IN HOA (A..F).
+//8 : chiều rộng tối thiểu là 8 ký tự.
+//0 : đệm bằng ký tự 0 (nếu độ dài thực tế nhỏ hơn 8).
 
 
 //TODO: check xem đang dùng clock nào
 //RCC_CFGR 0x08
-
-static inline void printValueRegister( uint32_t name_register )
-{
-    for(int i = 0; i < name_register; i++);
-}
-
-
-
-static void printValueRegister1( uint32_t name_register )
-{
-    for(int i = 0; i < name_register; i++);
-}
-
 
 
 
@@ -50,46 +44,42 @@ void DWT_DataMaching(int value,volatile void* addrOfValue)
 
 void configGpio();
 
+void valdicFunc(const char* fmt, ...) {
+    va_list va;
+    va_start(va, fmt); //fmt đánh dấu
+
+    if ( *fmt == 'c')
+    {
+        
+    }
+
+    va_arg(va, int );
+
+}
+
 int main(void) 
 {
-    ITM_Init(true);
-    
-
-    uint32_t start = timeStart();
-    for(int i = 0; i < 100; i++)
-        printValueRegister(1000);
-
-    uint32_t end = timeEnd();
-    conculateTime(start, end);
+    ITM_Init(false);
+    SEGGER_RTT_Init();
+    RTT_printf("=====Hello RTT!=====\n");
 
     // Vòng lặp chính
     char buffer[32];
     volatile int counter = 1;
-    
-    // Dùng sprintf
 
-
-    uint32_t startd = timeStart();
-    for(int i = 0; i < 100; i++)
-        printValueRegister1(1000);
-
-    uint32_t endd = timeEnd();
-    conculateTime(startd, endd);
     configGpio();
 
-
-    DWT_DataMaching(2, &counter);
+    
     while (1) {
-
+        counter++;
+        
         GPIO_Toogle( &(GPIO_Pin_t){GPIOD, GPIO_PIN_12 | GPIO_PIN_13 | GPIO_PIN_14 | GPIO_PIN_15} ); 
-        myPrintf("%x", 434343);
-        myPrintf(" Gia tri thanh ghi RCC_CFGR = %x", RCC_CFGR);
-        myPrintf(" Gia tri thanh ghi RCC_CFGR = %x", RCC_PLLCFGR);
-
+        
 
         for (volatile int i = 0; i < 1000000; i++); // Delay giả lập
-        led_on(12);
+        //led_on(12);
         for (volatile int i = 0; i < 1000000; i++); // Delay giả lập
+        //SEGGER_RTT_WriteString(0, "Hello RTTsdsad!\n");
     }
 
     return 0;
@@ -104,9 +94,32 @@ void configGpio()
     *rcc_gpio |= RCC_GPIODEN;
 
     GPIO_Pin_t gpio = { GPIOD , GPIO_PIN_12 | GPIO_PIN_13 | GPIO_PIN_14 | GPIO_PIN_15};
-    GPIO_Config config = { OUTPUT_PP, 0, MEDIUM_SPEED, 0};
+    gpio.port->gpiox_OSPEEDR = (uint32_t)0x0000C000; //Case 1: không ảnh hưởng cũ
 
+
+    GPIO_Config config = { OUTPUT_PP, 0, MEDIUM_SPEED, 0};
     GPIO_Init(&gpio , &config);
+
+    // Test AF : Config UART 2 : PA2(TX) PA3(RX) AF7
+    // DEBUG: đang debug
+    GPIO_Config configAF;
+    configAF.alternate = AF7; //UART 2
+    configAF.mode = MODE_AF;
+    configAF.pull = GPIO_NOPULL;
+    configAF.speed = HIGH_SPEED;
+    GPIO_Pin_t gpioAF = { GPIOA, GPIO_PIN_2 | GPIO_PIN_3 };
+    GPIO_Init(&gpioAF , &configAF);
+    //EXPEC: GPIOA->AFR[0] = 0x00007700;
+
+    //Testcase for exti
+    GPIO_Config configEXTI;
+    configEXTI.mode = EXTI_IT | TRIGGER_RISING;
+    GPIO_Pin_t gpioEXTI = { GPIOD, GPIO_PIN_2 | GPIO_PIN_11 };
+    GPIO_Init(&gpioEXTI , &configEXTI);
+
+
+    //Expected :
+        //nhảy vào hander tương ứng
 }
 
 

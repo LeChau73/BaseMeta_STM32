@@ -115,19 +115,20 @@ dump: $(TARGET).elf
 	$(OBJDUMP) -d $< > $(TARGET)_asm.txt
 
 PATH_OCD := "d:/STMicroelectronics/OpenOCD-20240916-0.12.0"
-OPEN_OCD = $(PATH_OCD)/bin/openocd.exe
-STLINK_PATH = $(PATH_OCD)/share/openocd/scripts/interface
+OPEN_OCD = openocd.exe
+interface_PATH = $(PATH_OCD)/share/openocd/scripts/interface
+
 TARGET_PATH = $(PATH_OCD)/share/openocd/scripts/target
 OPEN_OCDLINUX = openocd
 PYTHON = python.exe
 
 # Mục tiêu flash
-flash: $(TARGET).bin
-	$(OPEN_OCD) -f "$(STLINK_PATH)/stlink.cfg" -f "$(TARGET_PATH)/stm32f4x.cfg" -c "program \"$(TARGET).bin\" reset exit 0x08000000"
+#flash: $(TARGET).bin
+#	$(OPEN_OCD) -f "$(interface_PATH)/stlink.cfg" -f "$(TARGET_PATH)/stm32f4x.cfg" -c "program \"$(TARGET).bin\" reset exit 0x08000000"
 
 
 connect_window:
-	$(OPEN_OCD) -f $(STLINK_PATH)/stlink.cfg -f $(TARGET_PATH)/stm32f4x.cfg -f $(CURDIR)/openocd.cfg
+	$(OPEN_OCD) -f interface/jlink.cfg -f $(CURDIR)/openocd.cfg
 
 connect:
 	$(OPEN_OCD) -f $(CURDIR)/openocd.cfg
@@ -136,11 +137,23 @@ convert:
 	$(PYTHON) *.py
 	code *.txt
 
+jlink_server:
+
+JLINK      = JLink
+
+BUILDDIR   = build
+TARGET     = $(BUILDDIR)/firmware.elf
+	
+flash: $(TARGET)
+	$(JLINK) -CommanderScript flash.jlink
+
 connect_linux:
 	$(OPEN_OCDLINUX) -f /usr/share/openocd/scripts/interface/stlink.cfg -f /usr/share/openocd/scripts/target/stm32f4x.cfg
 
 
 # Mục tiêu debug: Khởi chạy GDB client, yêu cầu OpenOCD chạy ở terminal khác
+# NOTE: Dùng JLinkGDBServer thì port 2331 còn OpenOcd thì port 3333
+# GDB ↔ JLinkGDBServer ↔ J-Link probe ↔ STM32
 debug: $(TARGET).elf
 	@echo "--------------------------------------------------------------------"
 	@echo " IMPORTANT: Make sure OpenOCD is running in a SEPARATE terminal:"
@@ -150,7 +163,7 @@ debug: $(TARGET).elf
 	arm-none-eabi-gdb $(CURDIR)/$(TARGET).elf \
 		-ex "set confirm off" \
 		-ex "directory $(CURDIR)/Core/Src" \
-		-ex "target remote localhost:3333" \
+		-ex "target remote localhost:2331" \  
 		-ex "monitor tpiu config internal output_itm.txt uart off 16000000 2000000" \
 		-ex "monitor reset halt" \
 		-ex "load"
@@ -169,7 +182,7 @@ debug_linux: $(TARGET).elf
 	gdb-multiarch $(CURDIR)/$(TARGET).elf \
 		-ex "set confirm off" \
 		-ex "directory $(CURDIR)/Core/Src" \
-		-ex "target remote localhost:3333" \
+		-ex "target remote localhost:2331" \
 		-ex "monitor reset halt" \
 		-ex "load" \
 		-ex "break main" \

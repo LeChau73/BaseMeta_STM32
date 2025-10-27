@@ -1,0 +1,8 @@
+device STM32F411VE    ; chọn MCU
+if SWD                 ; chọn SWD
+speed 4000             ; tốc độ 4MHz
+r                      ; reset target
+loadbin build/firmware.bin, 0x08000000
+r                      ; reset và chạy
+g
+;exit

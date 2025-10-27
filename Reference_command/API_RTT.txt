@@ -1,0 +1,80 @@
+Ok, mình liệt kê cho bạn **các API phổ biến của SEGGER_RTT** mà bạn sẽ dùng nhiều khi debug trên STM32 hoặc bất kỳ MCU nào hỗ trợ J-Link. Mình chia theo mục đích cho dễ nhớ 👍
+
+---
+
+## 1️⃣ Khởi tạo / cấu hình
+
+| API                                                          | Chức năng                                        |
+| ------------------------------------------------------------ | ------------------------------------------------ |
+| `SEGGER_RTT_Init()`                                          | Khởi tạo RTT. Thường không cần gọi vì auto init. |
+| `SEGGER_RTT_SetChannelMode(unsigned channel, unsigned mode)` | Thiết lập chế độ channel (block/skip).           |
+
+**Ví dụ chế độ:**
+
+```c
+SEGGER_RTT_MODE_NO_BLOCK_SKIP   // bỏ qua dữ liệu nếu buffer đầy
+SEGGER_RTT_MODE_BLOCK_IF_FIFO_FULL  // chờ buffer rỗng trước khi ghi
+```
+
+---
+
+## 2️⃣ Gửi dữ liệu từ MCU → PC
+
+| API                                                                      | Chức năng                               |
+| ------------------------------------------------------------------------ | --------------------------------------- |
+| `SEGGER_RTT_WriteString(unsigned channel, const char* s)`                | Gửi chuỗi ASCII, thường dùng cho log.   |
+| `SEGGER_RTT_printf(unsigned channel, const char* format, ...)`           | Gửi log giống printf, hỗ trợ định dạng. |
+| `SEGGER_RTT_Write(unsigned channel, const void* pBuffer, unsigned size)` | Gửi buffer nhị phân.                    |
+
+**Ví dụ:**
+
+```c
+SEGGER_RTT_WriteString(0, "Hello RTT!\n");
+SEGGER_RTT_printf(0, "Temperature = %d C\n", temp);
+uint8_t data[4] = {1,2,3,4};
+SEGGER_RTT_Write(1, data, sizeof(data));
+```
+
+---
+
+## 3️⃣ Nhận dữ liệu từ PC → MCU
+
+| API                                                               | Chức năng                                     |
+| ----------------------------------------------------------------- | --------------------------------------------- |
+| `SEGGER_RTT_Read(unsigned channel, void* pBuffer, unsigned size)` | Đọc dữ liệu do PC gửi lên MCU.                |
+| `SEGGER_RTT_HasKey()`                                             | Kiểm tra xem có dữ liệu chưa đọc từ PC không. |
+| `SEGGER_RTT_GetKey()`                                             | Lấy 1 ký tự từ PC.                            |
+
+**Ví dụ:**
+
+```c
+if (SEGGER_RTT_HasKey()) {
+    char c = SEGGER_RTT_GetKey();
+    SEGGER_RTT_printf(0, "Received: %c\n", c);
+}
+```
+
+---
+
+## 4️⃣ Quản lý channel / trạng thái
+
+| API                                               | Chức năng                             |
+| ------------------------------------------------- | ------------------------------------- |
+| `SEGGER_RTT_GetAvailWriteSpace(unsigned channel)` | Xem còn bao nhiêu byte trống để ghi.  |
+| `SEGGER_RTT_GetKey()`                             | Lấy 1 ký tự từ PC (đọc non-blocking). |
+| `SEGGER_RTT_Reset()`                              | Reset RTT (xóa buffer, channel).      |
+
+---
+
+## 5️⃣ Mẹo sử dụng RTT hiệu quả
+
+1. **Không dùng delay dài khi ghi log** → RTT hỗ trợ non-blocking.
+2. **Phân channel**: channel 0 → log main, channel 1 → sensor data…
+3. **Buffer**: nếu log nhiều → nên dùng `NO_BLOCK_SKIP` để tránh treo MCU.
+4. **In dữ liệu nhị phân**: dùng `SEGGER_RTT_Write()` thay vì printf.
+
+---
+
+Nếu bạn muốn, mình có thể viết **ví dụ STM32F103 / STM32F411 + RTT** dùng **printf log, nhận dữ liệu từ PC, nhiều channel, non-blocking** – bạn chỉ việc copy chạy là thấy rõ cách hoạt động RTT.
+
+Bạn có muốn mình viết luôn không?

@@ -195,6 +195,28 @@ typedef struct
 } CoreDebug_Type;
 
 
+
+/**
+  \brief  Structure type to access the NVIC register.
+ */
+
+ typedef struct
+ {
+  __IO uint32_t NVIC_ISER[8];          //enable
+  __IO uint32_t NVIC_ICER[8];          //clear
+  __IO uint32_t NVIC_ISPR[8];          //pendding
+  __IO uint32_t NVIC_ICPR[8];          //clear pendding
+  __IO uint32_t NVIC_IABR[8];          //active
+  __IO uint32_t NVIC_IPR[60];          //priority
+  __OM uint32_t STIR;                  //software trigger
+ } NVIC_Type;
+
+
+
+
+
+
+
 /* Memory mapping with hardware */
 
 
@@ -203,6 +225,8 @@ typedef struct
 #define DWT_BASE            (0xE0001000UL)            /*!< DWT Base Address */
 #define TPI_BASE            (0xE0040000UL)            /*!< TPI Base Address */
 #define CoreDebug_BASE      (0xE000EDF0UL)                            /*!< Core Debug Base Address */
+#define NVIC_BASE           (0xE000E100UL)
+
 
 #define PERIPH_BASE           (0x40000000UL) /*!< Peripheral base address in the alias region */
 #define AHB1PERIPH_BASE       (PERIPH_BASE + 0x00020000UL)
@@ -232,7 +256,7 @@ typedef struct
 
 
 #define CoreDebug           ((CoreDebug_Type *) CoreDebug_BASE)
-
+#define NVIC                ((NVIC_Type *) NVIC_Type) //TODO: Vừa code ngang đây
 
 
 
@@ -354,14 +378,21 @@ typedef struct
 #define FLASH_PSIZE_DOUBLE_WORD    0x00000300U
 
 
-#ifdef USE_FULL_ASSERT
-
-  #define assert_param(expr)  ((expr) ? (void)0U : assert_failed((uint8_t *)__FILE__, _LINE_))
+#ifdef  USE_FULL_ASSERT
+/**
+  * @brief  The assert_param macro is used for function's parameters check.
+  * @param  expr If expr is false, it calls assert_failed function
+  *         which reports the name of the source file and the source
+  *         line number of the call that failed.
+  *         If expr is true, it returns no value.
+  * @retval None
+  */
+  #define assert_param(expr) ((expr) ? (void)0U : assert_failed((uint8_t *)__FILE__, __LINE__))
+/* Exported functions ------------------------------------------------------- */
   void assert_failed(uint8_t* file, uint32_t line);
 #else
   #define assert_param(expr) ((void)0U)
-
-#endif
+#endif /* USE_FULL_ASSERT */
 
 #ifdef __cplusplus
 }

@@ -56,6 +56,22 @@ typedef struct
 #define MODE_AF                                 (0x2UL << GPIO_MODE_Pos)
 #define MODE_ANALOG                             (0x3UL << GPIO_MODE_Pos)
 
+#define OUTPUT_TYPE_Pos                         4U
+#define OUTPUT_TYPE                             (0x1UL << OUTPUT_TYPE_Pos)
+#define OUTPUT_PP                               (0x0UL << OUTPUT_TYPE_Pos)
+#define OUTPUT_OD                               (0x1UL << OUTPUT_TYPE_Pos)
+
+#define EXTI_MODE_Pos                           16U
+#define EXTI_MODE                               (0x3UL << EXTI_MODE_Pos)
+#define EXTI_IT                                 (0x1UL << EXTI_MODE_Pos)          //interupt
+#define EXTI_EVT                                (0x2UL << EXTI_MODE_Pos)          //sự kiện ở ngoài
+
+#define TRIGGER_MODE_Pos                         20U
+#define TRIGGER_MODE                            (0x7UL << TRIGGER_MODE_Pos)       
+#define TRIGGER_RISING                          (0x1UL << TRIGGER_MODE_Pos)       //Mode lấy rising nếu cấu hình ngắt ngoài
+#define TRIGGER_FALLING                         (0x2UL << TRIGGER_MODE_Pos)       //Mode lấy falling nếu cấu hình ngắt ngoài
+
+
 
 
 #define OUTPUT_PP   MODE_OUTPUT | PUSH_PULL
@@ -63,8 +79,54 @@ typedef struct
 #define INPUT_FLOATING  0x00
 #define ALTERNATE   0x10
 
-#define PULL_UP     0x01
-#define PULL_DOWN   0x10
+#define PULL_UP         0x01
+#define PULL_DOWN       0x10
+#define GPIO_NOPULL     0x00
+
+
+
+
+/** @defgroup GPIO_mode_define GPIO mode define
+  * @brief GPIO Configuration Mode
+  *        Elements values convention: 0x00WX00YZ
+  *           - W  : EXTI trigger detection on 3 bits
+  *           - X  : EXTI mode (IT or Event) on 2 bits
+  *           - Y  : Output type (Push Pull or Open Drain) on 1 bit
+  *           - Z  : GPIO mode (Input, Output, Alternate or Analog) on 2 bits
+  *         - Mode IT là đi qua NVIC gọi ngắt phần mềm
+  *         - Mode Event tức là tạo ra pulse genetenor
+  * @{
+  */ 
+
+
+
+//GPIO_InitTypeDef GPIO_InitStruct = {0};
+//
+//GPIO_InitStruct.Pin = GPIO_PIN_0;                  // Chọn pin PA0
+//GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;        // Ngắt cạnh lên
+//GPIO_InitStruct.Pull = GPIO_NOPULL;                // Không kéo lên/xuống
+//HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+                         
+
+#define  GPIO_MODE_INPUT                        MODE_INPUT                                                  /*!< Input Floating Mode                   */
+#define  GPIO_MODE_OUTPUT_PP                    (MODE_OUTPUT | OUTPUT_PP)                                   /*!< Output Push Pull Mode                 */
+#define  GPIO_MODE_OUTPUT_OD                    (MODE_OUTPUT | OUTPUT_OD)                                   /*!< Output Open Drain Mode                */
+#define  GPIO_MODE_AF_PP                        (MODE_AF | OUTPUT_PP)                                       /*!< Alternate Function Push Pull Mode     */
+#define  GPIO_MODE_AF_OD                        (MODE_AF | OUTPUT_OD)                                       /*!< Alternate Function Open Drain Mode    */
+
+#define  GPIO_MODE_ANALOG                       MODE_ANALOG                                                 /*!< Analog Mode  */
+    
+#define  GPIO_MODE_IT_RISING                    (MODE_INPUT | EXTI_IT | TRIGGER_RISING)                     /*!< External Interrupt Mode with Rising edge trigger detection          */
+#define  GPIO_MODE_IT_FALLING                   (MODE_INPUT | EXTI_IT | TRIGGER_FALLING)                    /*!< External Interrupt Mode with Falling edge trigger detection         */
+#define  GPIO_MODE_IT_RISING_FALLING            (MODE_INPUT | EXTI_IT | TRIGGER_RISING | TRIGGER_FALLING)   /*!< External Interrupt Mode with Rising/Falling edge trigger detection  */
+ 
+#define  GPIO_MODE_EVT_RISING                   (MODE_INPUT | EXTI_EVT | TRIGGER_RISING)                     /*!< External Event Mode with Rising edge trigger detection             */
+#define  GPIO_MODE_EVT_FALLING                  (MODE_INPUT | EXTI_EVT | TRIGGER_FALLING)                    /*!< External Event Mode with Falling edge trigger detection            */
+#define  GPIO_MODE_EVT_RISING_FALLING           (MODE_INPUT | EXTI_EVT | TRIGGER_RISING | TRIGGER_FALLING)   /*!< External Event Mode with Rising/Falling edge trigger detection     */
+
+
+
+#define AF7             0x0111U
 
 
 //Speed
