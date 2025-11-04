@@ -29,8 +29,6 @@ void GPIO_Init(GPIO_Pin_t* gpiox, GPIO_Config* gpio_config)
         //check whether that pin i is configurated ?
         if ( ioposition & iocurrent )
         {
-
-
                 // For input and output
                 if ( ( gpio_config->mode & MODE_OUTPUT ) || ( gpio_config->mode & MODE_AF ) )
                 {
@@ -79,6 +77,28 @@ void GPIO_Init(GPIO_Pin_t* gpiox, GPIO_Config* gpio_config)
 
                 //TODO: Codding tiếp phần EXTI:
                     //2 mode: setting thanh ghi tương ứng
+                if ( ( gpio_config->mode & EXTI_MODE ) != 0 )
+                {
+                    if ( gpio_config->mode & EXTI_IT )
+                    {
+                        if ( gpio_config->mode & TRIGGER_RISING )
+                        {
+                            EXTI->EXTI_RTSR |= ( 0x01 << pin_num );  //rising
+                        } else {
+                            EXTI->EXTI_FTSR |= ( 0x01 << pin_num );  //falling
+                        }
+                        EXTI->EXTI_IMR |= 0x01 << pin_num;
+                    } else {
+                        EXTI->EXTI_EMR |= 0x01 << pin_num;
+                    }
+
+                    //NVIC
+                    //TODO: Writting macro để setting enable thanh ghi NVIC
+                    
+
+                }
+
+                
         
         } else {
             continue; // Skip if pin not selected
@@ -87,7 +107,7 @@ void GPIO_Init(GPIO_Pin_t* gpiox, GPIO_Config* gpio_config)
 
 }
 
-void GPIO_Toogle(GPIO_Pin_t* gpiox)
+void GPIO_Toogle(GPIO_Pin_t* gpiox) 
 {
     uint16_t pos = 0;
     for(uint8_t i = 0 ; i < 16; i++)

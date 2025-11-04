@@ -61,15 +61,35 @@ typedef struct
 #define OUTPUT_PP                               (0x0UL << OUTPUT_TYPE_Pos)
 #define OUTPUT_OD                               (0x1UL << OUTPUT_TYPE_Pos)
 
-#define EXTI_MODE_Pos                           16U
-#define EXTI_MODE                               (0x3UL << EXTI_MODE_Pos)
-#define EXTI_IT                                 (0x1UL << EXTI_MODE_Pos)          //interupt
-#define EXTI_EVT                                (0x2UL << EXTI_MODE_Pos)          //sự kiện ở ngoài
+
+// EXTI : External Interrupt
+//E → External (ngoài)
+//XTI → Interrupt (ngắt)
+
+#define EXTI_MODE_Pos                           16U                                 //0xFFF0FFFF
+#define EXTI_MODE                               (0x3UL << EXTI_MODE_Pos)            //                0b0000 0000 0000 0011 0000 0000 0000 0000
+#define EXTI_IT                                 (0x1UL << EXTI_MODE_Pos)            //interupt :      0b0000 0000 0000 0001 0000 0000 0000 0000
+#define EXTI_EVT                                (0x2UL << EXTI_MODE_Pos)            //sự kiện ở ngoài 0b0000 0000 0000 0010 0000 0000 0000 0000
+//                   **
+//
+
+
 
 #define TRIGGER_MODE_Pos                         20U
-#define TRIGGER_MODE                            (0x7UL << TRIGGER_MODE_Pos)       
+#define TRIGGER_MODE                            (0x7UL << TRIGGER_MODE_Pos)       // 0b0000 0000 0111 0000 0000 0000 0000 0000
 #define TRIGGER_RISING                          (0x1UL << TRIGGER_MODE_Pos)       //Mode lấy rising nếu cấu hình ngắt ngoài
 #define TRIGGER_FALLING                         (0x2UL << TRIGGER_MODE_Pos)       //Mode lấy falling nếu cấu hình ngắt ngoài
+
+
+
+#define  GPIO_MODE_IT_RISING                    (MODE_INPUT | EXTI_IT | TRIGGER_RISING)                     /*!< External Interrupt Mode with Rising edge trigger detection          */
+#define  GPIO_MODE_IT_FALLING                   (MODE_INPUT | EXTI_IT | TRIGGER_FALLING)                    /*!< External Interrupt Mode with Falling edge trigger detection         */
+#define  GPIO_MODE_IT_RISING_FALLING            (MODE_INPUT | EXTI_IT | TRIGGER_RISING | TRIGGER_FALLING)   /*!< External Interrupt Mode with Rising/Falling edge trigger detection  */
+ 
+#define  GPIO_MODE_EVT_RISING                   (MODE_INPUT | EXTI_EVT | TRIGGER_RISING)                     /*!< External Event Mode with Rising edge trigger detection             */
+#define  GPIO_MODE_EVT_FALLING                  (MODE_INPUT | EXTI_EVT | TRIGGER_FALLING)                    /*!< External Event Mode with Falling edge trigger detection            */
+#define  GPIO_MODE_EVT_RISING_FALLING           (MODE_INPUT | EXTI_EVT | TRIGGER_RISING | TRIGGER_FALLING)   /*!< External Event Mode with Rising/Falling edge trigger detection     */
+
 
 
 

@@ -93,6 +93,11 @@ void configGpio()
     volatile uint32_t* rcc_gpio = (volatile uint32_t*)RCC_AHB1ENR;
     *rcc_gpio |= RCC_GPIODEN;
 
+    __HAL_RCC_GPIOH_CLK_ENABLE();
+    __HAL_RCC_GPIOD_CLK_ENABLE();
+    __HAL_RCC_GPIOC_CLK_ENABLE();
+    __HAL_RCC_GPIOB_CLK_ENABLE();
+
     GPIO_Pin_t gpio = { GPIOD , GPIO_PIN_12 | GPIO_PIN_13 | GPIO_PIN_14 | GPIO_PIN_15};
     gpio.port->gpiox_OSPEEDR = (uint32_t)0x0000C000; //Case 1: không ảnh hưởng cũ
 
@@ -113,13 +118,19 @@ void configGpio()
 
     //Testcase for exti
     GPIO_Config configEXTI;
-    configEXTI.mode = EXTI_IT | TRIGGER_RISING;
-    GPIO_Pin_t gpioEXTI = { GPIOD, GPIO_PIN_2 | GPIO_PIN_11 };
+    configEXTI.mode = GPIO_MODE_IT_RISING;                             //HACK: mode EXTI phải cấu hình input cho nó
+    GPIO_Pin_t gpioEXTI = { GPIOB, GPIO_PIN_5 | GPIO_PIN_6 };
     GPIO_Init(&gpioEXTI , &configEXTI);
 
 
     //Expected :
         //nhảy vào hander tương ứng
+
+    //Testcase for event external interrupt
+    GPIO_Config* configEvent;
+    configEvent->mode = GPIO_MODE_EVT_RISING;                           //HACK: mode EXTI phải cấu hình input cho nó
+    GPIO_Pin_t gpioEvent = { GPIOC, GPIO_PIN_2 | GPIO_PIN_3 };
+    GPIO_Init(&gpioEvent , configEvent);
 }
 
 

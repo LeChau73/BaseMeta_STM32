@@ -159,21 +159,6 @@ extern "C"
 
 
     
-/** 
-  * @brief FLASH Registers
-  */
-
-typedef struct
-{
-  __IO uint32_t ACR;      /*!< FLASH access control register,   Address offset: 0x00 */
-  __IO uint32_t KEYR;     /*!< FLASH key register,              Address offset: 0x04 */
-  __IO uint32_t OPTKEYR;  /*!< FLASH option key register,       Address offset: 0x08 */
-  __IO uint32_t SR;       /*!< FLASH status register,           Address offset: 0x0C */
-  __IO uint32_t CR;       /*!< FLASH control register,          Address offset: 0x10 */
-  __IO uint32_t OPTCR;    /*!< FLASH option control register ,  Address offset: 0x14 */
-  __IO uint32_t OPTCR1;   /*!< FLASH option control register 1, Address offset: 0x18 */
-} FLASH_TypeDef;
-
 
 
 typedef struct
@@ -213,8 +198,19 @@ typedef struct
 
 
 
+/**
+  \brief  Structure type to access the EXTI registers .
+ */
 
-
+  typedef struct
+  {
+    __IO uint32_t EXTI_IMR;       //Interrupt mask register 
+    __IO uint32_t EXTI_EMR;       //Event mask register
+    __IO uint32_t EXTI_RTSR;      //Rising trigger selection register
+    __IO uint32_t EXTI_FTSR;      //Falling trigger selection register
+    __IO uint32_t EXTI_SWIER;     //Software interrupt event register
+    __IO uint32_t EXTI_PR;        //Pending register 
+  } EXTI_Type;
 
 
 /* Memory mapping with hardware */
@@ -226,7 +222,7 @@ typedef struct
 #define TPI_BASE            (0xE0040000UL)            /*!< TPI Base Address */
 #define CoreDebug_BASE      (0xE000EDF0UL)                            /*!< Core Debug Base Address */
 #define NVIC_BASE           (0xE000E100UL)
-
+#define EXTI_BASE           (0x40013C00UL) 
 
 #define PERIPH_BASE           (0x40000000UL) /*!< Peripheral base address in the alias region */
 #define AHB1PERIPH_BASE       (PERIPH_BASE + 0x00020000UL)
@@ -234,12 +230,6 @@ typedef struct
 
 #define RCC_BASE           0x40023800
 #define RCC_AHB1ENR        RCC_BASE + 0x30
-                                        
-#define GPIOA              (volatile GPIO_TypeDef* )(PERIPH_BASE + 0x00020000UL)
-#define GPIOB              (volatile GPIO_TypeDef* )(PERIPH_BASE + 0x00020400UL)
-#define GPIOC              (volatile GPIO_TypeDef* )(PERIPH_BASE + 0x00020800UL)
-#define GPIOD              (volatile GPIO_TypeDef* )(PERIPH_BASE + 0x00020C00UL)
-
 
 
 
@@ -256,8 +246,15 @@ typedef struct
 
 
 #define CoreDebug           ((CoreDebug_Type *) CoreDebug_BASE)
-#define NVIC                ((NVIC_Type *) NVIC_Type) //TODO: Vừa code ngang đây
+#define NVIC                ((NVIC_Type *) NVIC_BASE)
+#define EXTI                ((EXTI_Type *) EXTI_BASE)
 
+
+
+
+
+
+ //void NVIC_EnableIRQ(IRQn_Type IRQn)
 
 
 
