@@ -202,16 +202,6 @@ typedef struct
   \brief  Structure type to access the EXTI registers .
  */
 
-  typedef struct
-  {
-    __IO uint32_t EXTI_IMR;       //Interrupt mask register 
-    __IO uint32_t EXTI_EMR;       //Event mask register
-    __IO uint32_t EXTI_RTSR;      //Rising trigger selection register
-    __IO uint32_t EXTI_FTSR;      //Falling trigger selection register
-    __IO uint32_t EXTI_SWIER;     //Software interrupt event register
-    __IO uint32_t EXTI_PR;        //Pending register 
-  } EXTI_Type;
-
 
 /* Memory mapping with hardware */
 
@@ -247,7 +237,6 @@ typedef struct
 
 #define CoreDebug           ((CoreDebug_Type *) CoreDebug_BASE)
 #define NVIC                ((NVIC_Type *) NVIC_BASE)
-#define EXTI                ((EXTI_Type *) EXTI_BASE)
 
 
 

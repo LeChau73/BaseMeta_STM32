@@ -56,23 +56,64 @@ void valdicFunc(const char* fmt, ...) {
     va_arg(va, int );
 
 }
+#define TEXT 7
+const int val = 5;
+int globaldsadsa = 6;
+static int uninit;
+
+
+void SVC_Handler(void) {
+    __asm volatile("MOV R1, #0");
+    __asm volatile ("MSR CONTROL, R1");
+}
+
 
 int main(void) 
 {
     ITM_Init(false);
     SEGGER_RTT_Init();
     RTT_printf("=====Hello RTT!=====\n");
+     __asm volatile ("SVC 0x3");
+    __asm volatile("MOV R1, #1");
+    __asm volatile ("MSR CONTROL, R1");
+    uint32_t* cltr = (uint32_t*)0xE000E010;
+
+    SET_BIT(*cltr, 0);
+
+    LOG_REG(*cltr);
+
+
+
+
+
 
     // Vòng lặp chính
     char buffer[32];
-    volatile int counter = 1;
+    volatile uint32_t* counter = (volatile uint32_t *)0xE0001014;
+
+    *counter |= 0x05;
+
+    //Load from memory
+    __asm volatile ("LDR R3, %0"
+                    :
+                    :"m"(counter) );
+
+    __asm volatile ("LDR R0, [R3]");
+
+    __asm volatile ("MRS R0, CONTROL");
+    uint32_t controlVal = 0;
+    __asm volatile ("MOV %0, R0" : "=r"(controlVal));
+   
+    LOG_REG(controlVal);
+
+
 
     configGpio();
-
-    
+    globaldsadsa = val;
     while (1) {
         counter++;
-        
+        uninit++;
+        globaldsadsa++;
         GPIO_Toogle( &(GPIO_Pin_t){GPIOD, GPIO_PIN_12 | GPIO_PIN_13 | GPIO_PIN_14 | GPIO_PIN_15} ); 
         
 

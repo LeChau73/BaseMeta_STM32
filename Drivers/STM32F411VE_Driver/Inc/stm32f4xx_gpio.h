@@ -1,7 +1,6 @@
 #ifndef __STM32F4xx_GPIO_H
 #define __STM32F4xx_GPIO_H
 
-#include "core_m4.h"
 
 #ifdef __cplusplus
 extern "C"
@@ -9,7 +8,9 @@ extern "C"
 #endif
 
 
-
+#include "core_m4.h"
+#include "stm32f411xe.h"
+#include "stm32f4xx_hal_rcc.h"
 
 
 
@@ -188,7 +189,12 @@ void GPIO_Toogle(GPIO_Pin_t* gpiox);
 #define RCC_GPIOCEN                  ((uint16_t)0x0004) 
 #define RCC_GPIODEN                  ((uint16_t)0x0008) 
 
-
+//return về giá trị tương ứng của thanh ghi SYSCFG_EXTICR để setting port
+#define GPIO_GET_INDEX(__GPIO__)  (uint8_t)( __GPIO__ == GPIOA ? 0U : \
+                                             __GPIO__ == GPIOB ? 1U : \
+                                             __GPIO__ == GPIOC ? 2U : \
+                                             __GPIO__ == GPIOD ? 3U : \
+                                             __GPIO__ == GPIOH ? 0U : 0xFF )
 
 #ifdef __cplusplus
 }

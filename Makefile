@@ -188,6 +188,9 @@ debug_linux: $(TARGET).elf
 		-ex "break main" \
 		-ex "continue"
 
+reset:
+	gdb -x restart.gdb $(TARGET).elf
+
 cleanfile:
 	@> output_itm.txt
 

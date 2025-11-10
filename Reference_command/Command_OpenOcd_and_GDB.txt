@@ -47,7 +47,12 @@ monitor tpiu config internal output_itm.txt uart off 16000000 2000000
 | `info args`                                  | Hiển thị đối số truyền vào hàm                               |
 | `info frame`                                 | Xem ngữ cảnh stack frame hiện tại                            |
 | `info symbol 0x0800059a`                     | Tra cứu tên symbol tại địa chỉ                               |
-| 🧠 **Xem bộ nhớ & giá trị**                  |                                                              |
+| 🧠 **Xem bộ nhớ & giá trị**                  |   
+- **Cú pháp: x/<n><format><size> <address>**
+    - <n>: Số lượng đơn vị muốn xem.
+    - <format>: Định dạng (x: hex, d: decimal, c: char, s: string).
+    - <size>: Kích thước đơn vị (b: byte, h: halfword - 2 byte, w: word - 4 byte, g: giant - 8 byte).
+    - <address>: Địa chỉ memory.                                                           |
 | `x/4xw 0x08000000`                           | Xem 4 từ (word) 32-bit dạng hex từ địa chỉ 0x08000000        |
 | `x/16xb 0x20000000`                          | Xem 16 byte dạng hex tại địa chỉ RAM                         |
 | `x/s 0x20000000`                             | Xem chuỗi null-terminated tại địa chỉ                        |

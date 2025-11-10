@@ -1,0 +1,4 @@
+NOTE:
+MOV	Di chuyển giá trị giữa thanh ghi hoặc từ hằng số	❌ Không
+LDR	Nạp giá trị từ bộ nhớ vào thanh ghi	                ✅ Có
+STR	Ghi giá trị từ thanh ghi vào bộ nhớ	                ✅ Có
