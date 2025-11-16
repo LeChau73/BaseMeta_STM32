@@ -1,0 +1,3 @@
+=====Hello RTT!=====
+*cltr = 0x00000001
+controlVal = 0x00000000

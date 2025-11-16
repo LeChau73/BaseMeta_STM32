@@ -8648,7 +8648,6 @@ typedef struct
 #define FLASH_SCALE3_LATENCY1_FREQ   30000000U      /*!< HCLK frequency to set FLASH latency 1 in power scale 3  */
 #define FLASH_SCALE3_LATENCY2_FREQ   64000000U      /*!< HCLK frequency to set FLASH latency 2 in power scale 3  */
 
-
 /**
   * @}
   */

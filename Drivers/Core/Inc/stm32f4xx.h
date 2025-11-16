@@ -198,6 +198,45 @@ typedef enum
     } while ((__STREXH(val,(__IO uint16_t *)&(REG))) != 0U);               \
   } while(0)
 
+typedef enum {
+    EXTI_LINE_0  = (1U << 0),   /*!< EXTI line 0 */
+    EXTI_LINE_1  = (1U << 1),   /*!< EXTI line 1 */
+    EXTI_LINE_2  = (1U << 2),   /*!< EXTI line 2 */
+    EXTI_LINE_3  = (1U << 3),   /*!< EXTI line 3 */
+    EXTI_LINE_4  = (1U << 4),   /*!< EXTI line 4 */
+    EXTI_LINE_5  = (1U << 5),   /*!< EXTI line 5 */
+    EXTI_LINE_6  = (1U << 6),   /*!< EXTI line 6 */
+    EXTI_LINE_7  = (1U << 7),   /*!< EXTI line 7 */
+    EXTI_LINE_8  = (1U << 8),   /*!< EXTI line 8 */
+    EXTI_LINE_9  = (1U << 9),   /*!< EXTI line 9 */
+    EXTI_LINE_10 = (1U << 10),  /*!< EXTI line 10 */
+    EXTI_LINE_11 = (1U << 11),  /*!< EXTI line 11 */
+    EXTI_LINE_12 = (1U << 12),  /*!< EXTI line 12 */
+    EXTI_LINE_13 = (1U << 13),  /*!< EXTI line 13 */
+    EXTI_LINE_14 = (1U << 14),  /*!< EXTI line 14 */
+    EXTI_LINE_15 = (1U << 15)   /*!< EXTI line 15 */
+} EXTI_Line_TypeDef;
+
+
+//Software interrupt event register (EXTI_SWIER)
+#define TRIGGER_INTERRUPT_EVENT(LINE)  \
+    do {                                   \
+        /* Clear the software interrupt event */ \
+        CLEAR_BIT(EXTI->SWIER, LINE);  \
+        /* Set the software interrupt event */   \
+        SET_BIT(EXTI->SWIER, LINE);    \
+    } while(0)
+                    
+//240Line
+//1 register 32 line
+//32*8 = 256(tính từ 1) && thanh ghi 7 chỉ lấy đến 15
+//IRQn_Type: tính từ 0
+void NVIC_EnableIRQ(IRQn_Type IRQn) {
+    uint32_t temp = NVIC->NVIC_ISER[IRQn / 32]; //TODO: Optimize
+    temp &= ~(0x1 << (IRQn % 32));
+    temp |= (0x1 << (IRQn % 32));
+    NVIC->NVIC_ISER[IRQn / 32] = temp;
+}
 /**
   * @}
   */

@@ -364,6 +364,11 @@ typedef struct
 #define FLASH_PSIZE_DOUBLE_WORD    0x00000300U
 
 
+
+
+
+
+
 #ifdef  USE_FULL_ASSERT
 /**
   * @brief  The assert_param macro is used for function's parameters check.

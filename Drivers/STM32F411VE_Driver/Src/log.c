@@ -157,7 +157,7 @@ void myPrintf ( const char* fmt, ... )
                     print_int(i);
                     break;
                 }
-                case 'x': { //TODO:
+                case 'x': {
                     int i = va_arg(list_va , int );
                     char buffer_temp[10];
                     convert_hex_to_string(i, buffer_temp);

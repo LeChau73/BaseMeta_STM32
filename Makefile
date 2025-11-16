@@ -4,7 +4,7 @@ CC = $(PREFIX)gcc
 AS = $(PREFIX)as
 LD = $(PREFIX)ld
 OBJCOPY = $(PREFIX)objcopy
-OBJDUMP = $(PREFIX)objdump
+#OBJDUMP = $(PREFIX)objdump
 SIZE = $(PREFIX)size
 DEBUG = 1
 
@@ -33,7 +33,7 @@ CPU = -mcpu=cortex-m4
 FPU = -mfpu=fpv4-sp-d16 -mfloat-abi=hard
 CFLAGS = $(CPU) -mthumb $(FPU) \
          -Wall -Wextra \
-         -O3 -g \
+         -O0 -g \
          $(foreach dir,$(INC_DIR),-I$(dir)) \
          -std=gnu11
 
@@ -111,8 +111,13 @@ clean:
 	rm -rf $(BUILD_DIR)
 
 # Phân tích mã assembly
-dump: $(TARGET).elf
-	$(OBJDUMP) -d $< > $(TARGET)_asm.txt
+# make dump TARGET="myprogram.elf" OPTIONS="-S -d"
+FILE_DUMP ?= build/stm32f4xx_gpio.o
+OBJDUMP ?= $(PREFIX)objdump
+OPTIONS ?= -S
+dump:
+	@echo "Dumping $(FILE_DUMP) with options: $(OPTIONS)"
+	$(OBJDUMP) $(OPTIONS) $(FILE_DUMP) > $(FILE_DUMP)_asm.s
 
 PATH_OCD := "d:/STMicroelectronics/OpenOCD-20240916-0.12.0"
 OPEN_OCD = openocd.exe

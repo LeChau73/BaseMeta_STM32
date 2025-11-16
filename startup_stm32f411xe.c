@@ -34,6 +34,7 @@ extern void __libc_init_array(void);
 
 // Default handler for interrupts
 void Default_Handler(void) {
+    
     while(1);
 }
 

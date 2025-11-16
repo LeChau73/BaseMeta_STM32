@@ -13,6 +13,7 @@
 #include "SEGGER_RTT.h"
 #include "stm32f4xx_hal_rcc.h"
 #include "stm32f411xe.h"
+#include "stm32f4xx.h"
 
 extern void initialize_monitor_handles(void);
 

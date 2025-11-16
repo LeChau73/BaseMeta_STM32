@@ -1,58 +1,4 @@
-/*********************************************************************
-*                    SEGGER Microcontroller GmbH                     *
-*                        The Embedded Experts                        *
-**********************************************************************
-*                                                                    *
-*            (c) 1995 - 2023 SEGGER Microcontroller GmbH             *
-*                                                                    *
-*       www.segger.com     Support: support@segger.com               *
-*                                                                    *
-**********************************************************************
-*                                                                    *
-*       SEGGER SystemView * Real-time application analysis           *
-*                                                                    *
-**********************************************************************
-*                                                                    *
-* All rights reserved.                                               *
-*                                                                    *
-* SEGGER strongly recommends to not make any changes                 *
-* to or modify the source code of this software in order to stay     *
-* compatible with the SystemView and RTT protocol, and J-Link.       *
-*                                                                    *
-* Redistribution and use in source and binary forms, with or         *
-* without modification, are permitted provided that the following    *
-* condition is met:                                                  *
-*                                                                    *
-* o Redistributions of source code must retain the above copyright   *
-*   notice, this condition and the following disclaimer.             *
-*                                                                    *
-* THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND             *
-* CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES,        *
-* INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF           *
-* MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE           *
-* DISCLAIMED. IN NO EVENT SHALL SEGGER Microcontroller BE LIABLE FOR *
-* ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR           *
-* CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT  *
-* OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;    *
-* OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF      *
-* LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT          *
-* (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE  *
-* USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH   *
-* DAMAGE.                                                            *
-*                                                                    *
-**********************************************************************
-*                                                                    *
-*       SystemView version: 3.52                                    *
-*                                                                    *
-**********************************************************************
----------------------------END-OF-HEADER------------------------------
-File    : SEGGER_RTT.h
-Purpose : Implementation of SEGGER real-time transfer which allows
-          real-time communication on targets which support debugger
-          memory accesses while the CPU is running.
-Revision: $Rev: 25842 $
-----------------------------------------------------------------------
-*/
+
 
 #ifndef SEGGER_RTT_H
 #define SEGGER_RTT_H
@@ -66,19 +12,10 @@ Revision: $Rev: 25842 $
 **********************************************************************
 */
 #define RTT_printf(...)  SEGGER_RTT_printf(0,__VA_ARGS__)
+#define LOG_REG(name) SEGGER_RTT_printf(0, #name " = 0x%08X\n", (unsigned int)(name))  //for register
 #ifndef RTT_USE_ASM
-  //
-  // Some cores support out-of-order memory accesses (reordering of memory accesses in the core)
-  // For such cores, we need to define a memory barrier to guarantee the order of certain accesses to the RTT ring buffers.
-  // Needed for:
-  //   Cortex-M7 (ARMv7-M)
-  //   Cortex-M23 (ARM-v8M)
-  //   Cortex-M33 (ARM-v8M)
-  //   Cortex-A/R (ARM-v7A/R)
-  //
-  // We do not explicitly check for "Embedded Studio" as the compiler in use determines what we support.
-  // You can use an external toolchain like IAR inside ES. So there is no point in checking for "Embedded Studio"
-  //
+
+
   #if (defined __CROSSWORKS_ARM)                  // Rowley Crossworks
     #define _CC_HAS_RTT_ASM_SUPPORT 1
     #if (defined __ARM_ARCH_7M__)                 // Cortex-M3
@@ -498,6 +435,76 @@ int SEGGER_RTT_vprintf(unsigned BufferIndex, const char * sFormat, va_list * pPa
 #define RTT_CTRL_BG_BRIGHT_MAGENTA    "\x1B[4;45m"
 #define RTT_CTRL_BG_BRIGHT_CYAN       "\x1B[4;46m"
 #define RTT_CTRL_BG_BRIGHT_WHITE      "\x1B[4;47m"
+
+// Macro RTT log dùng màu chuẩn
+#define RTT_LOG_BLACK(fmt, ...)       SEGGER_RTT_printf(0, RTT_CTRL_TEXT_BLACK        fmt RTT_CTRL_RESET "\n", ##__VA_ARGS__)
+#define RTT_LOG_RED(fmt, ...)         SEGGER_RTT_printf(0, RTT_CTRL_TEXT_RED          fmt RTT_CTRL_RESET "\n", ##__VA_ARGS__)
+#define RTT_LOG_GREEN(fmt, ...)       SEGGER_RTT_printf(0, RTT_CTRL_TEXT_GREEN        fmt RTT_CTRL_RESET "\n", ##__VA_ARGS__)
+#define RTT_LOG_YELLOW(fmt, ...)      SEGGER_RTT_printf(0, RTT_CTRL_TEXT_YELLOW       fmt RTT_CTRL_RESET "\n", ##__VA_ARGS__)
+#define RTT_LOG_BLUE(fmt, ...)        SEGGER_RTT_printf(0, RTT_CTRL_TEXT_BLUE         fmt RTT_CTRL_RESET "\n", ##__VA_ARGS__)
+#define RTT_LOG_MAGENTA(fmt, ...)     SEGGER_RTT_printf(0, RTT_CTRL_TEXT_MAGENTA      fmt RTT_CTRL_RESET "\n", ##__VA_ARGS__)
+#define RTT_LOG_CYAN(fmt, ...)        SEGGER_RTT_printf(0, RTT_CTRL_TEXT_CYAN         fmt RTT_CTRL_RESET "\n", ##__VA_ARGS__)
+#define RTT_LOG_WHITE(fmt, ...)       SEGGER_RTT_printf(0, RTT_CTRL_TEXT_WHITE        fmt RTT_CTRL_RESET "\n", ##__VA_ARGS__)
+
+// Macro RTT log dùng màu sáng (bright)
+#define RTT_LOG_BRIGHT_BLACK(fmt, ...)    SEGGER_RTT_printf(0, RTT_CTRL_TEXT_BRIGHT_BLACK    fmt RTT_CTRL_RESET "\n", ##__VA_ARGS__)
+#define RTT_LOG_BRIGHT_RED(fmt, ...)      SEGGER_RTT_printf(0, RTT_CTRL_TEXT_BRIGHT_RED      fmt RTT_CTRL_RESET "\n", ##__VA_ARGS__)
+#define RTT_LOG_BRIGHT_GREEN(fmt, ...)    SEGGER_RTT_printf(0, RTT_CTRL_TEXT_BRIGHT_GREEN    fmt RTT_CTRL_RESET "\n", ##__VA_ARGS__)
+#define RTT_LOG_BRIGHT_YELLOW(fmt, ...)   SEGGER_RTT_printf(0, RTT_CTRL_TEXT_BRIGHT_YELLOW   fmt RTT_CTRL_RESET "\n", ##__VA_ARGS__)
+#define RTT_LOG_BRIGHT_BLUE(fmt, ...)     SEGGER_RTT_printf(0, RTT_CTRL_TEXT_BRIGHT_BLUE     fmt RTT_CTRL_RESET "\n", ##__VA_ARGS__)
+#define RTT_LOG_BRIGHT_MAGENTA(fmt, ...)  SEGGER_RTT_printf(0, RTT_CTRL_TEXT_BRIGHT_MAGENTA  fmt RTT_CTRL_RESET "\n", ##__VA_ARGS__)
+#define RTT_LOG_BRIGHT_CYAN(fmt, ...)     SEGGER_RTT_printf(0, RTT_CTRL_TEXT_BRIGHT_CYAN     fmt RTT_CTRL_RESET "\n", ##__VA_ARGS__)
+#define RTT_LOG_BRIGHT_WHITE(fmt, ...)    SEGGER_RTT_printf(0, RTT_CTRL_TEXT_BRIGHT_WHITE    fmt RTT_CTRL_RESET "\n", ##__VA_ARGS__)
+// Macro RTT log với background
+#define RTT_LOG_BG_BLACK(fmt, ...)      SEGGER_RTT_printf(0, RTT_CTRL_BG_BLACK      fmt RTT_CTRL_RESET "\n", ##__VA_ARGS__)
+#define RTT_LOG_BG_RED(fmt, ...)        SEGGER_RTT_printf(0, RTT_CTRL_BG_RED        fmt RTT_CTRL_RESET "\n", ##__VA_ARGS__)
+#define RTT_LOG_BG_GREEN(fmt, ...)      SEGGER_RTT_printf(0, RTT_CTRL_BG_GREEN      fmt RTT_CTRL_RESET "\n", ##__VA_ARGS__)
+#define RTT_LOG_BG_YELLOW(fmt, ...)     SEGGER_RTT_printf(0, RTT_CTRL_BG_YELLOW     fmt RTT_CTRL_RESET "\n", ##__VA_ARGS__)
+#define RTT_LOG_BG_BLUE(fmt, ...)       SEGGER_RTT_printf(0, RTT_CTRL_BG_BLUE       fmt RTT_CTRL_RESET "\n", ##__VA_ARGS__)
+#define RTT_LOG_BG_MAGENTA(fmt, ...)    SEGGER_RTT_printf(0, RTT_CTRL_BG_MAGENTA    fmt RTT_CTRL_RESET "\n", ##__VA_ARGS__)
+#define RTT_LOG_BG_CYAN(fmt, ...)       SEGGER_RTT_printf(0, RTT_CTRL_BG_CYAN       fmt RTT_CTRL_RESET "\n", ##__VA_ARGS__)
+#define RTT_LOG_BG_WHITE(fmt, ...)      SEGGER_RTT_printf(0, RTT_CTRL_BG_WHITE      fmt RTT_CTRL_RESET "\n", ##__VA_ARGS__)
+
+// Macro với bright background
+#define RTT_LOG_BG_BRIGHT_BLACK(fmt, ...)   SEGGER_RTT_printf(0, RTT_CTRL_BG_BRIGHT_BLACK    fmt RTT_CTRL_RESET "\n", ##__VA_ARGS__)
+#define RTT_LOG_BG_BRIGHT_RED(fmt, ...)     SEGGER_RTT_printf(0, RTT_CTRL_BG_BRIGHT_RED      fmt RTT_CTRL_RESET "\n", ##__VA_ARGS__)
+#define RTT_LOG_BG_BRIGHT_GREEN(fmt, ...)   SEGGER_RTT_printf(0, RTT_CTRL_BG_BRIGHT_GREEN    fmt RTT_CTRL_RESET "\n", ##__VA_ARGS__)
+#define RTT_LOG_BG_BRIGHT_YELLOW(fmt, ...)  SEGGER_RTT_printf(0, RTT_CTRL_BG_BRIGHT_YELLOW   fmt RTT_CTRL_RESET "\n", ##__VA_ARGS__)
+#define RTT_LOG_BG_BRIGHT_BLUE(fmt, ...)    SEGGER_RTT_printf(0, RTT_CTRL_BG_BRIGHT_BLUE     fmt RTT_CTRL_RESET "\n", ##__VA_ARGS__)
+#define RTT_LOG_BG_BRIGHT_MAGENTA(fmt, ...) SEGGER_RTT_printf(0, RTT_CTRL_BG_BRIGHT_MAGENTA  fmt RTT_CTRL_RESET "\n", ##__VA_ARGS__)
+#define RTT_LOG_BG_BRIGHT_CYAN(fmt, ...)    SEGGER_RTT_printf(0, RTT_CTRL_BG_BRIGHT_CYAN     fmt RTT_CTRL_RESET "\n", ##__VA_ARGS__)
+#define RTT_LOG_BG_BRIGHT_WHITE(fmt, ...)   SEGGER_RTT_printf(0, RTT_CTRL_BG_BRIGHT_WHITE    fmt RTT_CTRL_RESET "\n", ##__VA_ARGS__)
+
+// Ví dụ màu
+#define RTT_COLOR_REG_NAME    RTT_CTRL_TEXT_BRIGHT_WHITE
+#define RTT_COLOR_REG_VALUE   RTT_CTRL_TEXT_BRIGHT_CYAN
+#define RTT_COLOR_RESET       RTT_CTRL_RESET
+
+// Macro log register với màu
+#define LOG_REG_COLOR(name) \
+    SEGGER_RTT_printf(0, RTT_COLOR_REG_NAME #name RTT_COLOR_RESET " = " RTT_COLOR_REG_VALUE "0x%08X" RTT_COLOR_RESET "\n", (unsigned int)(name))
+
+#define LOG_REG_COLOR1(name) \
+    SEGGER_RTT_printf(0, RTT_COLOR_REG_NAME #name RTT_COLOR_RESET " = " RTT_CTRL_TEXT_BRIGHT_BLUE "0x%08X" RTT_COLOR_RESET "\n", (unsigned int)(name))
+
+
+// Màu
+#define RTT_COLOR_REG_NAME        RTT_CTRL_TEXT_BRIGHT_WHITE
+#define RTT_COLOR_REG_VALUE       RTT_CTRL_TEXT_BRIGHT_CYAN
+#define RTT_COLOR_REG_SPECIAL     RTT_CTRL_TEXT_BRIGHT_YELLOW
+#define RTT_COLOR_RESET           RTT_CTRL_RESET
+
+// Macro log register với 3 màu
+#define LOG_REG_COLOR3(name, special_val) \
+    SEGGER_RTT_printf(0, RTT_COLOR_REG_NAME #name RTT_COLOR_RESET " = " \
+                       "%s0x%08X" RTT_COLOR_RESET "\n", \
+                       ((unsigned int)(name) == (special_val)) ? RTT_COLOR_REG_SPECIAL : RTT_COLOR_REG_VALUE, \
+                       (unsigned int)(name))
+
+//uint32_t CTRL = 0xDEADBEEF;
+//LOG_REG_COLOR3(CTRL, 0xDEADBEEF);  // Vì bằng giá trị đặc biệt → vàng
+//CTRL = 0x12345678;
+//LOG_REG_COLOR3(CTRL, 0xDEADBEEF);  // Không phải đặc biệt → cyan
 
 
 #endif
