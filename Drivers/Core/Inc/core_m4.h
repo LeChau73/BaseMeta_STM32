@@ -3,11 +3,12 @@
 
 #include <stdint.h>
 
-
 #ifdef __cplusplus
 extern "C"
 {
 #endif
+
+
 
 /* following defines should be used for structure members */
 #define __IM volatile const /*! Defines 'read only' structure member permissions */
@@ -199,6 +200,47 @@ typedef struct
 
 
 /**
+  \brief  Structure type to access the System Control Block (SCB).
+ */
+typedef struct
+{
+  __IM  uint32_t CPUID;                  /*!< Offset: 0x000 (R/ )  CPUID Base Register */
+  __IOM uint32_t ICSR;                   /*!< Offset: 0x004 (R/W)  Interrupt Control and State Register */
+  __IOM uint32_t VTOR;                   /*!< Offset: 0x008 (R/W)  Vector Table Offset Register */
+  __IOM uint32_t AIRCR;                  /*!< Offset: 0x00C (R/W)  Application Interrupt and Reset Control Register */
+  __IOM uint32_t SCR;                    /*!< Offset: 0x010 (R/W)  System Control Register */
+  __IOM uint32_t CCR;                    /*!< Offset: 0x014 (R/W)  Configuration Control Register */
+  __IOM uint8_t  SHP[12U];               /*!< Offset: 0x018 (R/W)  System Handlers Priority Registers (4-7, 8-11, 12-15) */
+  __IOM uint32_t SHCSR;                  /*!< Offset: 0x024 (R/W)  System Handler Control and State Register */
+  __IOM uint32_t CFSR;                   /*!< Offset: 0x028 (R/W)  Configurable Fault Status Register */
+  __IOM uint32_t HFSR;                   /*!< Offset: 0x02C (R/W)  HardFault Status Register */
+  __IOM uint32_t DFSR;                   /*!< Offset: 0x030 (R/W)  Debug Fault Status Register */
+  __IOM uint32_t MMFAR;                  /*!< Offset: 0x034 (R/W)  MemManage Fault Address Register */
+  __IOM uint32_t BFAR;                   /*!< Offset: 0x038 (R/W)  BusFault Address Register */
+  __IOM uint32_t AFSR;                   /*!< Offset: 0x03C (R/W)  Auxiliary Fault Status Register */
+  __IM  uint32_t PFR[2U];                /*!< Offset: 0x040 (R/ )  Processor Feature Register */
+  __IM  uint32_t DFR;                    /*!< Offset: 0x048 (R/ )  Debug Feature Register */
+  __IM  uint32_t ADR;                    /*!< Offset: 0x04C (R/ )  Auxiliary Feature Register */
+  __IM  uint32_t MMFR[4U];               /*!< Offset: 0x050 (R/ )  Memory Model Feature Register */
+  __IM  uint32_t ISAR[5U];               /*!< Offset: 0x060 (R/ )  Instruction Set Attributes Register */
+        uint32_t RESERVED0[5U];
+  __IOM uint32_t CPACR;                  /*!< Offset: 0x088 (R/W)  Coprocessor Access Control Register */
+} SCB_Type;
+
+
+
+/* Memory mapping of Core Hardware */
+#define SCS_BASE            (0xE000E000UL)                            /*!< System Control Space Base Address */
+#define ITM_BASE            (0xE0000000UL)                            /*!< ITM Base Address */
+#define DWT_BASE            (0xE0001000UL)                            /*!< DWT Base Address */
+#define TPI_BASE            (0xE0040000UL)                            /*!< TPI Base Address */
+#define CoreDebug_BASE      (0xE000EDF0UL)                            /*!< Core Debug Base Address */
+#define SysTick_BASE        (SCS_BASE +  0x0010UL)                    /*!< SysTick Base Address */
+#define NVIC_BASE           (SCS_BASE +  0x0100UL)                    /*!< NVIC Base Address */
+#define SCB_BASE            (SCS_BASE +  0x0D00UL)                    /*!< System Control Block Base Address */
+#define SCB                 ((SCB_Type       *)     SCB_BASE      )   /*!< SCB configuration struct */
+
+/**
   \brief  Structure type to access the EXTI registers .
  */
 
@@ -232,7 +274,6 @@ typedef struct
 #define ITM                 ((ITM_Type*)ITM_BASE) // Ép kiểu ITM_Type để có thể truy cập vào struct này,và nói rằng là một con trỏ kiểu ITM_Type đang trỏ đến ITM_BASE
 #define DWT                 ((DWT_Type*)DWT_BASE)                   /*!< DWT configuration struct */
 #define TPI                 ((TPI_Type*)TPI_BASE)                   /*!< TPI configuration struct */
-#define FLASH               ((FLASH_TypeDef *) FLASH_R_BASE)
 
 
 #define CoreDebug           ((CoreDebug_Type *) CoreDebug_BASE)
@@ -240,15 +281,10 @@ typedef struct
 
 
 
-
-
-
- //void NVIC_EnableIRQ(IRQn_Type IRQn)
-
-
-
-
-
+//240Line
+//1 register 32 line
+//32*8 = 256(tính từ 1) && thanh ghi 7 chỉ lấy đến 15
+//IRQn_Type: tính từ 0
 
 
 
@@ -362,7 +398,6 @@ typedef struct
 #define FLASH_PSIZE_HALF_WORD      0x00000100U
 #define FLASH_PSIZE_WORD           0x00000200U
 #define FLASH_PSIZE_DOUBLE_WORD    0x00000300U
-
 
 
 

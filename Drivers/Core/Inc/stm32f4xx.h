@@ -227,16 +227,7 @@ typedef enum {
         SET_BIT(EXTI->SWIER, LINE);    \
     } while(0)
                     
-//240Line
-//1 register 32 line
-//32*8 = 256(tính từ 1) && thanh ghi 7 chỉ lấy đến 15
-//IRQn_Type: tính từ 0
-void NVIC_EnableIRQ(IRQn_Type IRQn) {
-    uint32_t temp = NVIC->NVIC_ISER[IRQn / 32]; //TODO: Optimize
-    temp &= ~(0x1 << (IRQn % 32));
-    temp |= (0x1 << (IRQn % 32));
-    NVIC->NVIC_ISER[IRQn / 32] = temp;
-}
+
 /**
   * @}
   */

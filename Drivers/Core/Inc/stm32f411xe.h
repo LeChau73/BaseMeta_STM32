@@ -129,16 +129,19 @@ typedef enum
   I2C3_EV_IRQn                = 72,     /*!< I2C3 event interrupt                                              */
   I2C3_ER_IRQn                = 73,     /*!< I2C3 error interrupt                                              */
   FPU_IRQn                    = 81,     /*!< FPU global interrupt                                              */
-                                SPI4_IRQn                   = 84,     /*!< SPI4 global Interrupt                                             */
-                                                              SPI5_IRQn                   = 85      /*!< SPI5 global Interrupt                                              */
+  SPI4_IRQn                   = 84,     /*!< SPI4 global Interrupt                                             */
+  SPI5_IRQn                   = 85      /*!< SPI5 global Interrupt                                              */
 } IRQn_Type;
+
+
+
+
 
 /**
   * @}
   */
 
 #include "core_m4.h"             /* Cortex-M4 processor and core peripherals */
-#include "system_stm32f4xx.h"
 #include <stdint.h>
 
 /** @addtogroup Peripheral_registers_structures
@@ -148,6 +151,17 @@ typedef enum
 /**
   * @brief Analog to Digital Converter
   */
+
+static void NVIC_EnableIRQ(IRQn_Type IRQn);
+
+
+static void NVIC_EnableIRQ(IRQn_Type IRQn) {
+    uint32_t temp = NVIC->NVIC_ISER[IRQn / 32]; //TODO: Optimize
+    temp &= ~(0x1 << (IRQn % 32));
+    temp |= (0x1 << (IRQn % 32));
+    NVIC->NVIC_ISER[IRQn / 32] = temp;
+}
+
 
 typedef struct
 {
@@ -682,7 +696,7 @@ typedef struct
 #define GPIOH_BASE            (AHB1PERIPH_BASE + 0x1C00UL)
 #define CRC_BASE              (AHB1PERIPH_BASE + 0x3000UL)
 #define RCC_BASE              (AHB1PERIPH_BASE + 0x3800UL)
-#define FLASH_R_BASE          (AHB1PERIPH_BASE + 0x3C00UL)
+//#define FLASH_R_BASE          (AHB1PERIPH_BASE + 0x3C00UL)
 #define DMA1_BASE             (AHB1PERIPH_BASE + 0x6000UL)
 #define DMA1_Stream0_BASE     (DMA1_BASE + 0x010UL)
 #define DMA1_Stream1_BASE     (DMA1_BASE + 0x028UL)

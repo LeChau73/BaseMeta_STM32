@@ -17,17 +17,18 @@ extern "C"
 /* structure for register */
 typedef struct
 {
-    uint32_t gpiox_MODER;
-    uint32_t gpiox_OTYPER;
-    uint32_t gpiox_OSPEEDR;
-    uint32_t gpiox_PUPDR;
-    uint32_t gpiox_IDR;
-    uint32_t gpiox_ODR;
-    uint32_t gpiox_BSRR;
-    uint32_t gpiox_LCKR;
-    uint32_t gpiox_AFRL;
-    uint32_t gpiox_AFRH;
+    __IO uint32_t MODER;    // 0x00
+    __IO uint32_t OTYPER;   // 0x04
+    __IO uint32_t OSPEEDR;  // 0x08
+    __IO uint32_t PUPDR;    // 0x0C
+    __IO uint32_t IDR;      // 0x10
+    __IO uint32_t ODR;      // 0x14
+    __IO uint32_t BSRR;     // 0x18
+    __IO uint32_t LCKR;     // 0x1C
+    __IO uint32_t AFRL;     // 0x20
+    __IO uint32_t AFRH;     // 0x24
 } GPIO_TypeDef;
+
 
 /* structor for configuration */
 typedef struct

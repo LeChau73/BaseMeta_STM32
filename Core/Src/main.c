@@ -60,90 +60,109 @@ int globaldsadsa = 6;
 static int uninit;
 
 
-void SVC_Handler(void) {
+void EXTI0_IRQHandler(void) {
+    __asm volatile ("SVC 0x3");
+
+    EXTI->PR &= ~(1 << 0);
+}
+
+uint32_t __get_MSP() {
+    uint32_t msp = 0;
     __asm volatile("MOV R1, #0");
-    __asm volatile ("MSR CONTROL, R1");
+    __asm volatile ("MRS %0, MSP": "=r"(msp));
 }
 
 //TODO: với các cái này
-//void SVC_Handler(void) {
-//    uint32_t *sp = (uint32_t *)__get_MSP();  // Hoặc PSP nếu User mode
-//    uint32_t pc = sp[6];                     // PC khi gọi SVC
-//    uint8_t svc_number = *((uint8_t *)(pc - 1));  // Đọc byte cuối lệnh SVC (imm là byte 0)
-//    switch (svc_number & 0xFF) {             // Mask để lấy imm (0-255)
-//        case 3:  // Xử lý cho SVC #3, ví dụ: custom function
-//            // Gọi hàm tương ứng, ví dụ: my_custom_syscall();
-//            break;
-//        // Các case khác...
-//    }
-//}
+void SVC_Handler(void) {
+    uint32_t *sp = (uint32_t *)__get_MSP();  // Hoặc PSP nếu User mode
+    uint32_t pc = sp[6];                     // PC khi gọi SVC
+    uint8_t svc_number = *((uint8_t *)(pc - 1));  // Đọc byte cuối lệnh SVC (imm là byte 0)
+    switch (svc_number & 0xFF) {             // Mask để lấy imm (0-255)
+        case 3:  // Xử lý cho SVC #3, ví dụ: custom function
+            // Gọi hàm tương ứng, ví dụ: my_custom_syscall();
+            break;
+        // Các case khác...
+    }
+}
 
 void BusFault_Handler(void) {
 
 }
 
+void HardFault_Handler(uint32_t *pStack)
+{
+    RTT_LOG_RED("------- HARD FAULT ------\n");
+
+    uint32_t stacked_r0  = pStack[0];
+    uint32_t stacked_r1  = pStack[1];
+    uint32_t stacked_r2  = pStack[2];
+    uint32_t stacked_r3  = pStack[3];
+    uint32_t stacked_r12 = pStack[4];
+    uint32_t stacked_lr  = pStack[5];   // LR cũ (thường là EXC_RETURN)
+    uint32_t stacked_pc  = pStack[6];   // ← Đây mới là PC gây lỗi
+    uint32_t stacked_psr = pStack[7];
+
+    RTT_printf("R0  = 0x%08X\n", stacked_r0);
+    RTT_printf("R1  = 0x%08X\n", stacked_r1);
+    RTT_printf("R2  = 0x%08X\n", stacked_r2);
+    RTT_printf("R3  = 0x%08X\n", stacked_r3);
+    RTT_printf("R12 = 0x%08X\n", stacked_r12);
+    RTT_printf("LR  = 0x%08X\n", stacked_lr);
+    RTT_printf("PC  = 0x%08X  ←←← LỆNH GÂY LỖI Ở ĐÂY\n", stacked_pc);
+    RTT_printf("PSR = 0x%08X\n", stacked_psr);
+
+    // In thêm SP hiện tại (MSP hoặc PSP tùy mode)
+    RTT_printf("Stacked SP  = 0x%08X  (tức là địa chỉ pStack)\n", (uint32_t)pStack);
+
+    // In các thanh ghi fault
+    RTT_printf("HFSR = 0x%08X\n", SCB->HFSR);
+    RTT_printf("CFSR = 0x%08X\n", SCB->CFSR);
+    RTT_printf("BFAR = 0x%08X\n", SCB->BFAR);
+    RTT_printf("MMFAR= 0x%08X\n", SCB->MMFAR);
+    //TODO: implement lưu vào flash
+    
+    while(1) {};
+}
+void EXTI9_5_IRQHandler(void) {
+    LOG_REG_COLOR1(EXTI->PR);
+
+    EXTI->PR &= ~(1 << 5);
+    EXTI->PR &= ~(1 << 6);
+
+    LOG_REG_COLOR1(EXTI->PR);
+}
+
+
+
 int main(void) 
 {
+
     //ITM_Init(false);
     //myPrintf("I am using ITM print for debug\n");
     //ITM_SendString("Hello");
     SEGGER_RTT_Init();
     RTT_LOG_BRIGHT_RED("=====Hello RTT!=====\n");
-    //TODO: Suy nghĩ cách code assembly enble bus fault trong thanh ghi SHCSR để vào đây sẽ enable SVC_Handler
-    //TODO: Sau đó suy nghĩ cách code 
-    //TODO: Nghịch với các sugget từ AI
-    //__asm volatile ("MOV R1, #1");
-    //__asm volatile ("MSR CONTROL, R1");
-    uint32_t* cltr = (uint32_t*)0xE000E010;
 
     SEGGER_RTT_WriteString(0, RTT_CTRL_CLEAR); // Clear screen
 
-
-    //SET_BIT(*cltr, 0);
-
-    //LOG_REG(*cltr);
-
-    //__asm volatile ("SVC 0x3");
-
-    
-    
-
-    // Vòng lặp chính
-    char buffer[32];
-    volatile uint32_t* counter = (volatile uint32_t *)0xE0001014;
-
-    *counter |= 0x05;
-
     //Load from memory
-    __asm volatile ("LDR R3, %0"
-                    :
-                    :"m"(counter) );
-
-    __asm volatile ("LDR R0, [R3]");
-
-    __asm volatile ("MRS R0, CONTROL");
-    uint32_t controlVal = 0;
-    __asm volatile ("MOV %0, R0" : "=r"(controlVal));
+    //__asm volatile ("LDR R3, %0"
+    //                :
+    //                :"m"(counter) );
+//
+    //__asm volatile ("LDR R0, [R3]");
+//
+    //__asm volatile ("MRS R0, CONTROL");
+    //uint32_t controlVal = 0;
+    //__asm volatile ("MOV %0, R0" : "=r"(controlVal));
    
-    LOG_REG(controlVal);
-
-    
-
     configGpio();
-
-    TRIGGER_INTERRUPT_EVENT(EXTI_LINE_5);
-    SET_BIT(EXTI->SWIER, 0x10U); //BUG: Tại sao lại lỗi hardfault
+    //BUG: Chi enable line 1
+    TRIGGER_INTERRUPT_EVENT(EXTI_LINE_5 | EXTI_LINE_0);
     LOG_REG_COLOR1(EXTI->SWIER);
     LOG_REG_COLOR1(EXTI->PR);
-    globaldsadsa = val;
     while (1) {
-        counter++;
-        uninit++;
-        globaldsadsa++;
-        GPIO_Toogle( &(GPIO_Pin_t){GPIOD, GPIO_PIN_12 | GPIO_PIN_13 | GPIO_PIN_14 | GPIO_PIN_15} ); 
-        
-        
-
+        GPIO_Toogle( &(GPIO_Pin_t){GPIOD, GPIO_PIN_12 | GPIO_PIN_13 | GPIO_PIN_14 | GPIO_PIN_15} );
 
         for (volatile int i = 0; i < 1000000; i++); // Delay giả lập
         //led_on(12);
@@ -168,7 +187,7 @@ void configGpio()
     __HAL_RCC_GPIOB_CLK_ENABLE();
 
     GPIO_Pin_t gpio = { GPIOD , GPIO_PIN_12 | GPIO_PIN_13 | GPIO_PIN_14 | GPIO_PIN_15};
-    gpio.port->gpiox_OSPEEDR = (uint32_t)0x0000C000; //Case 1: không ảnh hưởng cũ
+    gpio.port->OSPEEDR = (uint32_t)0x0000C000; //Case 1: không ảnh hưởng cũ
 
 
     GPIO_Config config = { OUTPUT_PP, 0, MEDIUM_SPEED, 0};
@@ -187,11 +206,21 @@ void configGpio()
 
     //Testcase for exti
     GPIO_Config configEXTI;
-    configEXTI.mode = GPIO_MODE_IT_RISING;                             //HACK: mode EXTI phải cấu hình input cho nó
-    GPIO_Pin_t gpioEXTI = { GPIOB, GPIO_PIN_5 | GPIO_PIN_6 };
+    configEXTI.mode = GPIO_MODE_IT_RISING;      
+    //configEXTI.mode = PULL_DOWN;                   //HACK: mode EXTI phải cấu hình input cho nó
+    GPIO_Pin_t gpioEXTI = { GPIOA, GPIO_PIN_0 | GPIO_PIN_6 };
     GPIO_Init(&gpioEXTI , &configEXTI);
-    NVIC_EnableIRQ(EXTI9_5_IRQn);
 
+    //BUG: Pending đã enable,nhưng k thể interrupt
+    NVIC_EnableIRQ(EXTI9_5_IRQn | EXTI0_IRQn);
+    LOG_REG_COLOR1(GPIOA);
+    LOG_REG_COLOR1(&gpioEXTI.port->PUPDR);
+    LOG_REG_COLOR1(gpioEXTI.port->MODER);
+    LOG_REG_COLOR1(gpioEXTI.port->PUPDR);
+    LOG_REG_COLOR1(gpioEXTI.port->AFRL);
+    LOG_REG_COLOR1(gpioEXTI.port->AFRH);
+
+    
     //Expected :
         //nhảy vào hander tương ứng
 

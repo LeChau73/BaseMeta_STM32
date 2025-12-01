@@ -1,0 +1,155 @@
+IPSR = xPSR[8:0] cho biết số thứ tự của exception hiện tại.
+Các exception của CPU chiếm slot 0 → 15
+Các ngắt ngoài (IRQ) bắt đầu từ 16
+| IPSR (xPSR) | Ý nghĩa     |
+| ----------- | ----------- |
+| 0           | Thread mode |
+| 1           | Reset       |
+| 2           | NMI         |
+| 3           | HardFault   |
+| 4           | MemManage   |
+| 5           | BusFault    |
+| …           | …           |
+| 15          | SysTick     |
+| 16          | IRQ0        |
+| 17          | IRQ1        |
+| …           | …           |
+
+# 🧠 **xPSR = Program Status Register mở rộng**
+
+Nó gồm 3 phần gộp chung thành 1 thanh ghi 32-bit:
+
+```
+xPSR = APSR + EPSR + IPSR
+```
+
+* **APSR** → Application PSR (các cờ toán học: N, Z, C, V, Q)
+* **EPSR** → Execution PSR (thông tin thực thi: T-bit, IT state)
+* **IPSR** → Interrupt PSR (số hiệu interrupt hiện tại)
+
+---
+
+# 🔎 **Cấu trúc chi tiết (bit-level)**
+
+Dưới đây là layout quan trọng:
+
+```
+31     30     29     28     27-24    23-16    15-10     9-8    7-0
+ N      Z      C      V       Q       (reserved)   IT     T     ISR #
+```
+
+Giải thích từng nhóm:
+
+---
+
+# 🟥 **1. APSR — Application Program Status Register**
+
+## 🔹 **Bit 31 – N (Negative flag)**
+
+Set = kết quả toán học âm (bit MSB = 1)
+
+## 🔹 **Bit 30 – Z (Zero flag)**
+
+Set = kết quả bằng 0
+
+## 🔹 **Bit 29 – C (Carry flag)**
+
+Sinh carry trong phép cộng hoặc borrow trong trừ
+
+## 🔹 **Bit 28 – V (Overflow flag)**
+
+Tràn số có dấu (signed overflow)
+
+## 🔹 **Bit 27 – Q (Saturation flag)**
+
+Lỗi khi thực hiện lệnh DSP có saturation
+
+---
+
+# 🟦 **2. EPSR — Execution Program Status Register**
+
+## 🔹 **Bit 24–25 & 26–27 → ITSTATE (If-Then state)**
+
+Dùng cho lệnh IT trong Thumb-2
+(Hiếm dùng, trừ khi viết ASM thủ công)
+
+## 🔹 **Bit 24 → T-bit (bit quan trọng nhất)**
+
+* **1 = CPU đang chạy ở Thumb mode**
+* **0 = ARM mode** (nhưng Cortex-M chỉ hỗ trợ Thumb → luôn = 1)
+
+---
+
+# 🟨 **3. IPSR — Interrupt Program Status Register**
+
+## 🔹 **Bit 8 → T-bit**
+
+* Bit 0–8 chứa **ISR number**, tức là CPU đang chạy trong ngắt nào.
+
+Ví dụ:
+
+| ISR number | Ý nghĩa                                 |
+| ---------- | --------------------------------------- |
+| 0          | Thread mode (không trong interrupt)     |
+| 1          | Reset                                   |
+| 2          | NMI                                     |
+| 3          | HardFault                               |
+| 15         | SysTick                                 |
+| 16+        | External interrupts (EXTI, USART, TIM…) |
+
+---
+
+# 🎯 **Một ví dụ thực tế**
+
+Giả sử bạn đang trong ISR SysTick, xPSR có thể giống:
+
+```
+0x0100000F
+```
+
+Giải mã:
+
+* T-bit = 1 (Thumb mode)
+* ISR number = 15 (SysTick)
+* N,Z,C,V = 0
+
+---
+
+# 🧩 **Đọc xPSR trong C**
+
+```c
+uint32_t xpsr = __get_xPSR();
+```
+
+hoặc đọc trực tiếp:
+
+```c
+print *(int*)0xE000ED04;  // SCB->ICSR chứa IPSR nhưng xPSR đọc qua special register
+```
+
+Để xem APSR:
+
+```c
+uint32_t apsr = __get_APSR();
+```
+
+---
+
+# 🧠 **Tóm lại**
+
+xPSR cho biết:
+
+* CPU đang chạy ở đâu? (ISR nào)
+* Kết quả toán học gần nhất? (N,Z,C,V)
+* CPU đang ở chế độ nào? (T-bit → Thumb)
+* Trạng thái lệnh IT (nếu có)
+
+---
+
+Nếu bạn muốn, mình có thể:
+
+👉 Vẽ hình sơ đồ bit cho xPSR
+👉 Giải thích cách HardFault handler sử dụng xPSR
+👉 Demo ví dụ thật khi debug với OpenOCD
+
+Chỉ cần nói tiếp nhé!

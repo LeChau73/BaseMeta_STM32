@@ -1,7 +1,7 @@
 #include "stdio.h"
-#include "stdint.h"
 #include "core_m4.h"
-
+// Vector Table
+#include "stm32f4xx.h"
 #define C1
 
 #ifdef C1
@@ -34,7 +34,13 @@ extern void __libc_init_array(void);
 
 // Default handler for interrupts
 void Default_Handler(void) {
-    
+    uint32_t status = 0;
+    __asm volatile (
+        "ldr %0, =0xE000ED24\n"
+        "ldr %0, [%0]\n"
+        :"=r"(status)
+    );
+
     while(1);
 }
 
@@ -106,8 +112,7 @@ __attribute__((weak, alias("Default_Handler"))) void I2C3_EV_IRQHandler(void);
 __attribute__((weak, alias("Default_Handler"))) void I2C3_ER_IRQHandler(void);
 __attribute__((weak, alias("Default_Handler"))) void FPU_IRQHandler(void);
 
-// Vector Table
-#include "stm32f4xx.h"
+
 
 extern unsigned long _estack;
 
@@ -217,7 +222,7 @@ void (* const g_pfnVectors[])(void) = {
     DMA1_Stream5_IRQHandler,         /* DMA1 Stream 5 */
     DMA1_Stream6_IRQHandler,         /* DMA1 Stream 6 */
     ADC_IRQHandler,                  /* ADC1 */
-    0, 0, 0, 0, 0,                   /* Reserved for STM32F411 */
+    0, 0, 0, 0,                      /* Reserved for STM32F411 */
     EXTI9_5_IRQHandler,              /* External Line[9:5] */
     TIM1_BRK_TIM9_IRQHandler,        /* TIM1 Break / TIM9 */
     TIM1_UP_TIM10_IRQHandler,        /* TIM1 Update / TIM10 */

@@ -1,7 +1,7 @@
 #include "stm32f4xx_gpio.h"
 #include "SEGGER_RTT.h"
 
-
+int test_extern = 10;
 
 void GPIO_Init(GPIO_Pin_t* gpiox, GPIO_Config* gpio_config)
 {
@@ -33,36 +33,36 @@ void GPIO_Init(GPIO_Pin_t* gpiox, GPIO_Config* gpio_config)
                 // For input and output
                 if ( ( gpio_config->mode & MODE_OUTPUT ) || ( gpio_config->mode & MODE_AF ) )
                 {
-                    uint32_t temp = gpiox->port->gpiox_OSPEEDR;
+                    uint32_t temp = gpiox->port->OSPEEDR;
                     temp &= ~(0x03 << pin_num * 2);
                     temp |= (uint32_t)(gpio_config->speed << pin_num * 2);
-                    gpiox->port->gpiox_OSPEEDR = temp;
+                    gpiox->port->OSPEEDR = temp;
                 }
 
                 /** Configuration output type : 0 : push-pull | 1 : open-drain **/
-                uint32_t temp = gpiox->port->gpiox_OTYPER;
+                uint32_t temp = gpiox->port->OTYPER;
                 temp &= ~(0x01 << pin_num);
                 /* Conver value to mode : because : mode && output type the same a value*/                                                      // clear old value
                 temp |= (uint32_t)(((gpio_config->mode & OUTPUT_TYPE) >> OUTPUT_TYPE_Pos) << pin_num);
-                gpiox->port->gpiox_OTYPER = temp;
+                gpiox->port->OTYPER = temp;
 
                 /** Configuration pull-up/pull-down : 0 :  00: No pull-up, pull-down
                                                            01: Pull-up
                                                            10: Pull-down **/
-                temp = gpiox->port->gpiox_PUPDR;
+                temp = gpiox->port->PUPDR;
                 temp &= ~(0x03 << pin_num * 2);                                                         // clear old value
                 temp |= (uint32_t)(gpio_config->pull << pin_num * 2);
-                gpiox->port->gpiox_PUPDR = temp;
+                gpiox->port->PUPDR = temp;
 
                 /** Configuration mode :  Input (reset state)
                                           01: General purpose output mode
                                           10: Alternate function mode
                                           11: Analog mode **/
 
-                temp = gpiox->port->gpiox_MODER;
+                temp = gpiox->port->MODER;
                 temp &= ~(0x03 << pin_num * 2);                                                         // clear old value
                 temp |= (uint32_t)( ((gpio_config->mode & GPIO_MODE ) >> GPIO_MODE_Pos) << pin_num * 2 );
-                gpiox->port->gpiox_MODER = temp;
+                gpiox->port->MODER = temp;
                 
                 //O alternate function low register 
                 // 2 thanh ghi : 1 cái cho 8 pin | 1 cái cho 8 pin
@@ -71,7 +71,7 @@ void GPIO_Init(GPIO_Pin_t* gpiox, GPIO_Config* gpio_config)
                 // 0 - 7
                 // 1111 : 0 -> 7 thì bit 4 luôn bằng 0, 8 -> 15 thì bit 4 sẽ bằng 1
 
-                uint32_t* ptr = &gpiox->port->gpiox_AFRL;
+                uint32_t* ptr = &gpiox->port->AFRL;
                 ptr  +=   ( pin_num >> 3) & 0x01;                                                   //xác định xem AFR L | H
                 *ptr &=  ~( ( uint32_t ) ( 0x0F << ( pin_num % 8 ) * 4 ) );                          //clear old
                 *ptr |=   ( uint32_t ) ( gpio_config->alternate  << ( pin_num % 8 ) * 4 ) ;          //Setting  [ pin_num % 8 ] vì thanh ghi đó chỉ setting 0 -> 8
@@ -150,7 +150,7 @@ void GPIO_Init(GPIO_Pin_t* gpiox, GPIO_Config* gpio_config)
                     LOG_REG_COLOR1(EXTI->IMR);
                     LOG_REG_COLOR1(EXTI->RTSR);
                     LOG_REG_COLOR1(EXTI->FTSR);
-                    LOG_REG_COLOR1(gpiox->port->gpiox_MODER);
+                    LOG_REG_COLOR1(gpiox->port->MODER);
 
                     // THIẾU : k mapping pin đó vào line nào
                     // một line EXTI có thể được cấu hình đồng thời cho cả hai cạnh: Rising và Falling.
@@ -175,6 +175,6 @@ void GPIO_Toogle(GPIO_Pin_t* gpiox)
     for(uint8_t i = 0 ; i < 16; i++)
     {
         pos = (gpiox->pin & (0x01 << i));
-        gpiox->port->gpiox_ODR |= (gpiox->pin << pos);
+        gpiox->port->ODR |= (gpiox->pin << pos);
     }
 }

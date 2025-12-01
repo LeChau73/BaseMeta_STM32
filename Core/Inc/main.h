@@ -14,10 +14,10 @@
 #include "stm32f4xx_hal_rcc.h"
 #include "stm32f411xe.h"
 #include "stm32f4xx.h"
+#include "BST.h"
 
 extern void initialize_monitor_handles(void);
-
-
+extern int test_extern;
 
 struct Dummy {
     int member1;
@@ -27,7 +27,7 @@ struct Dummy {
 int global1 = 5; // Global variable located in RAM(section .data)
 int global2; // Global variable located in RAM(section .bss)
 
-
+inline uint32_t  __get_MSP();
 inline void ConfigClockHSE16MHZ();
 
 #endif
