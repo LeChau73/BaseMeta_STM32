@@ -153,13 +153,24 @@ typedef enum
   */
 
 static void NVIC_EnableIRQ(IRQn_Type IRQn);
-
+static void NVIC_SetPriority( IRQn_Type IRQn, uint8_t priority_value);
 
 static void NVIC_EnableIRQ(IRQn_Type IRQn) {
+    uint32_t val = IRQn;
     uint32_t temp = NVIC->NVIC_ISER[IRQn / 32]; //TODO: Optimize
     temp &= ~(0x1 << (IRQn % 32));
     temp |= (0x1 << (IRQn % 32));
     NVIC->NVIC_ISER[IRQn / 32] = temp;
+}
+
+// Set priority chưa support sub
+static void NVIC_SetPriority( IRQn_Type IRQn, uint8_t priority_value) {
+    // Find index of arr after find nibble
+    // 4 -> 1 index
+    uint32_t temp = NVIC->NVIC_IPR[IRQn / 4];
+    temp &= ~( 0xF << ( ( IRQn % 4 ) << 8) ); //TODO: Optimize
+    temp |= ( priority_value << ( ( IRQn % 4 ) << 8) );
+    NVIC->NVIC_IPR[IRQn / 4] = temp;
 }
 
 

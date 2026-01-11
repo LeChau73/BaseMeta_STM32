@@ -19,6 +19,7 @@ extern uint32_t _sdata;     // Địa chỉ bắt đầu .data trong RAM (đích
 extern uint32_t _edata;     // Địa chỉ kết thúc .data trong RAM
 extern uint32_t _sbss;      // Địa chỉ bắt đầu .bss
 extern uint32_t _ebss;      // Địa chỉ kết thúc .bss
+extern uint32_t _eheap;
 
 // Khai báo hàm main
 extern int main(void);
@@ -292,6 +293,8 @@ void gpio_init(void)
 // Reset Handler Implementation
 void Reset_Handler(void)
 {
+    uint32_t *endHeap = &_eheap;
+    uint32_t a = *endHeap;
     // 1. Copy .data từ Flash sang RAM
     uint32_t *pSrc = &_sidata;
     uint32_t *pDest = &_sdata;

@@ -61,22 +61,42 @@ static int uninit;
 
 
 void EXTI0_IRQHandler(void) {
-    __asm volatile ("SVC 0x3");
-
-    EXTI->PR &= ~(1 << 0);
+    //__asm volatile ("SVC #1"); //BUG: Không gọi SVC trong IRQ 
+    uint32_t reg_pr = EXTI->PR;
+    reg_pr &= ~(1 << 0);
+    EXTI->PR |= reg_pr;
 }
 
+
+__attribute((naked))
 uint32_t __get_MSP() {
-    uint32_t msp = 0;
-    __asm volatile("MOV R1, #0");
-    __asm volatile ("MRS %0, MSP": "=r"(msp));
+    __asm volatile("MOV R0, #0");
+    __asm volatile ("MRS R0, MSP");
+    __asm volatile ("BX LR");
 }
 
-//TODO: với các cái này
+//naked :loại bỏ các lời gọi hàm trước cho compiler chèn vào
+__attribute((naked)) 
 void SVC_Handler(void) {
     uint32_t *sp = (uint32_t *)__get_MSP();  // Hoặc PSP nếu User mode
-    uint32_t pc = sp[6];                     // PC khi gọi SVC
-    uint8_t svc_number = *((uint8_t *)(pc - 1));  // Đọc byte cuối lệnh SVC (imm là byte 0)
+    uint32_t pc = sp[6];                     // PC khi gọi SVC ~ pc = 0x80000c
+    //TODO:
+    // Trước khi nhảy vào handler pc lưu lệnh sau đó: Vì PC đang trỏ đến lệnh sau SVC
+    // → Lệnh SVC luôn có dạng: 2 bytes = 0xDF xx
+    // Byte thấp: chính là svc_number (từ 0 đến 255)
+    // SVC #3 → được assembler biên dịch thành: 0xDF 03
+    uint32_t aircr = SCB->AIRCR; // kiểm tra MSB hay LSB
+    uint8_t svc_number;
+
+    if (aircr & (1 << 15)) {
+        // Big-endian (hiếm gặp)
+        svc_number = ((uint8_t *)pc) [-1];
+    } else {
+        // Little-endian (luôn là trường hợp này trên STM32F4)
+        svc_number = ((uint8_t *)pc) [-2]; // Đọc byte cuối lệnh SVC (imm là byte 0)
+    }
+
+    
     switch (svc_number & 0xFF) {             // Mask để lấy imm (0-255)
         case 3:  // Xử lý cho SVC #3, ví dụ: custom function
             // Gọi hàm tương ứng, ví dụ: my_custom_syscall();
@@ -84,6 +104,21 @@ void SVC_Handler(void) {
         // Các case khác...
     }
 }
+
+//void SVC_Handler(uint32_t* pStack) {
+//
+//
+//    uint32_t stacked_r0  = pStack[0];
+//    uint32_t stacked_r1  = pStack[1];
+//    uint32_t stacked_r2  = pStack[2];
+//    uint32_t stacked_r3  = pStack[3];
+//    uint32_t stacked_r12 = pStack[4];
+//    uint32_t stacked_lr  = pStack[5];   // LR cũ (thường là EXC_RETURN)
+//    uint32_t stacked_pc  = pStack[6];   // ← Đây mới là PC gây lỗi
+//    uint32_t stacked_psr = pStack[7];
+//
+//}
+
 
 void BusFault_Handler(void) {
 
@@ -111,6 +146,15 @@ void HardFault_Handler(uint32_t *pStack)
     RTT_printf("PC  = 0x%08X  ←←← LỆNH GÂY LỖI Ở ĐÂY\n", stacked_pc);
     RTT_printf("PSR = 0x%08X\n", stacked_psr);
 
+    myPrintf("R0  = 0x%x\n", stacked_r0);
+    myPrintf("R1  = 0x%x\n\n", stacked_r1);
+    myPrintf("R2  = 0x%x\n\n", stacked_r2);
+    myPrintf("R3  = 0x%x\n", stacked_r3);
+    myPrintf("R12 = 0x%x\n", stacked_r12);
+    myPrintf("LR  = 0x%x\n", stacked_lr);
+    myPrintf("PC  = 0x%x  ←←← LỆNH GÂY LỖI Ở ĐÂY\n", stacked_pc);
+    myPrintf("PSR = 0x%x\n", stacked_psr);
+
     // In thêm SP hiện tại (MSP hoặc PSP tùy mode)
     RTT_printf("Stacked SP  = 0x%08X  (tức là địa chỉ pStack)\n", (uint32_t)pStack);
 
@@ -119,6 +163,11 @@ void HardFault_Handler(uint32_t *pStack)
     RTT_printf("CFSR = 0x%08X\n", SCB->CFSR);
     RTT_printf("BFAR = 0x%08X\n", SCB->BFAR);
     RTT_printf("MMFAR= 0x%08X\n", SCB->MMFAR);
+
+    myPrintf("HFSR = 0x%x\n", SCB->HFSR);
+    myPrintf("CFSR = 0x%x\n", SCB->CFSR);
+    myPrintf("BFAR = 0x%x\n", SCB->BFAR);
+    myPrintf("MMFAR= 0x%x\n", SCB->MMFAR);
     //TODO: implement lưu vào flash
     
     while(1) {};
@@ -132,13 +181,13 @@ void EXTI9_5_IRQHandler(void) {
     LOG_REG_COLOR1(EXTI->PR);
 }
 
-
+//
 
 int main(void) 
 {
-
-    //ITM_Init(false);
-    //myPrintf("I am using ITM print for debug\n");
+    // __asm volatile ("SVC #3"); //BUG: Không gọi SVC trong IRQ
+    ITM_Init(false);
+    myPrintf("I am using ITM print for debug\n");
     //ITM_SendString("Hello");
     SEGGER_RTT_Init();
     RTT_LOG_BRIGHT_RED("=====Hello RTT!=====\n");
@@ -158,7 +207,7 @@ int main(void)
    
     configGpio();
     //BUG: Chi enable line 1
-    TRIGGER_INTERRUPT_EVENT(EXTI_LINE_5 | EXTI_LINE_0);
+    //TRIGGER_INTERRUPT_EVENT(EXTI_LINE_0);
     LOG_REG_COLOR1(EXTI->SWIER);
     LOG_REG_COLOR1(EXTI->PR);
     while (1) {
@@ -176,6 +225,13 @@ int main(void)
 
 void configGpio()
 {
+
+    t_TCB debugTCB;
+    strcpy(debugTCB.task_name,"task1");
+    debugTCB.priority = 2;
+    debugTCB.status = READY;
+    int a = sizeof(debugTCB);
+
 
     //Enable clock
     volatile uint32_t* rcc_gpio = (volatile uint32_t*)RCC_AHB1ENR;
@@ -205,6 +261,7 @@ void configGpio()
     //EXPEC: GPIOA->AFR[0] = 0x00007700;
 
     //Testcase for exti
+    //TODO
     GPIO_Config configEXTI;
     configEXTI.mode = GPIO_MODE_IT_RISING;      
     //configEXTI.mode = PULL_DOWN;                   //HACK: mode EXTI phải cấu hình input cho nó
@@ -212,7 +269,8 @@ void configGpio()
     GPIO_Init(&gpioEXTI , &configEXTI);
 
     //BUG: Pending đã enable,nhưng k thể interrupt
-    NVIC_EnableIRQ(EXTI9_5_IRQn | EXTI0_IRQn);
+    //@day : 12/11
+    NVIC_EnableIRQ(EXTI0_IRQn);
     LOG_REG_COLOR1(GPIOA);
     LOG_REG_COLOR1(&gpioEXTI.port->PUPDR);
     LOG_REG_COLOR1(gpioEXTI.port->MODER);
