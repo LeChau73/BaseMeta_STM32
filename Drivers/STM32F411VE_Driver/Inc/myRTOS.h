@@ -3,22 +3,33 @@
 
 #include<stdio.h>
 #include<stdint.h>
+#include<string.h>
 
 // designed task stack
 extern uint32_t _estack;
-#define END_STACK_KERNEL    &_estack + (2*1024U)
+#define END_STACK_KERNEL    &_estack - (2*1024U)
 
-#define END_HEAD_CUSTOM     END_STACK_KERNEL + (2*1024U)
-#define START_TASK          END_HEAD_CUSTOM
+#define START_HEAD_CUSTOM     END_STACK_KERNEL - (4*1024U)
+
+#define END_HEAP              END_STACK_KERNEL
+
+#define START_TASK            START_HEAD_CUSTOM
 
 typedef void (*task_function_t)(void* parameter);
 typedef struct t_TCB t_TCB;
+
+
 typedef enum {
     BLOCKED = -1,
     READY,
     RUNNING,
     SUSPENDED
 } statusTask;
+
+typedef enum {
+    ERROR = -1,
+    OK
+} StatusCode;
 
 typedef struct t_TCB
 {
@@ -35,6 +46,19 @@ typedef struct t_TCB
     t_TCB* next_tcb;
     void *task_parameter;
 }t_TCB;     //  40byte
+
+
+StatusCode CreateTask(const char* nameTask, uint8_t priority, uint32_t leghtTask, task_function_t taskExcu, void *parameter);
+StatusCode StartSchedule();
+void switch_MSP_To_PSP();
+void InitSysTick(uint8_t timeout);
+
+void PendSV_Handler(void);
+void SysTick_Handler(void);
+
+void* mallocCustom(size_t size);
+
+
 
 
 #endif

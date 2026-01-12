@@ -185,6 +185,11 @@ void EXTI9_5_IRQHandler(void) {
 
 int main(void) 
 {
+
+    // Refer todo để check cây test
+    CreateTask("Task1", 4, 500, NULL, NULL);
+
+
     // __asm volatile ("SVC #3"); //BUG: Không gọi SVC trong IRQ
     ITM_Init(false);
     myPrintf("I am using ITM print for debug\n");
@@ -231,6 +236,9 @@ void configGpio()
     debugTCB.priority = 2;
     debugTCB.status = READY;
     int a = sizeof(debugTCB);
+
+
+
 
 
     //Enable clock
