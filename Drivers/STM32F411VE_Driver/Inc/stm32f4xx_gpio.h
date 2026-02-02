@@ -148,7 +148,7 @@ typedef struct
 
 
 
-#define AF7             0x0111U
+#define AF7             0x07U
 
 
 //Speed

@@ -27,8 +27,8 @@ typedef enum {
 } statusTask;
 
 typedef enum {
-    ERROR = -1,
-    OK
+    STATUS_ERROR = -1,
+    STATUS_OK
 } StatusCode;
 
 typedef struct t_TCB

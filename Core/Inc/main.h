@@ -16,6 +16,7 @@
 #include "stm32f4xx.h"
 #include "BST.h"
 #include "myRTOS.h"
+#include "stm32f4_usart.h"
 
 extern void initialize_monitor_handles(void);
 extern int test_extern;

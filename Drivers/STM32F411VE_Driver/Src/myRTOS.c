@@ -10,7 +10,8 @@ static t_TCB* headTask = NULL;
 
 StatusCode CreateTask(const char* nameTask, uint8_t priority, uint32_t leghtTask, task_function_t taskExcu, void *parameter)
 {
-    StatusCode result = ERROR;
+    StatusCode result = STATUS_ERROR;
+    
     static void* EndStackCurrent = NULL;
 
     t_TCB* newTask = (t_TCB*)mallocCustom(sizeof(t_TCB));
@@ -18,7 +19,7 @@ StatusCode CreateTask(const char* nameTask, uint8_t priority, uint32_t leghtTask
         return result;
 
     strcpy(newTask->task_name, nameTask);
-
+    // start stack of task
     if ( EndStackCurrent == NULL ) {
         newTask->start_stack = START_TASK;
 
@@ -50,7 +51,7 @@ StatusCode CreateTask(const char* nameTask, uint8_t priority, uint32_t leghtTask
     uint32_t* temp_psp = newTask->p_psp;
     *temp_psp = (0x1 << 24); //xPSR
     --temp_psp;
-    *temp_psp = newTask->task_entry; //PC //TODO: Check lại
+    *temp_psp = *(uint32_t*)newTask->task_entry; //PC //TODO: Check lại
     --temp_psp;
     *temp_psp = 0; //LR             //TODO: Check lại
     --temp_psp;
@@ -60,7 +61,7 @@ StatusCode CreateTask(const char* nameTask, uint8_t priority, uint32_t leghtTask
     --temp_psp;
     *temp_psp = 0; //R1
     --temp_psp;
-    *temp_psp = newTask->task_parameter; //R0
+    //*temp_psp = newTask->task_parameter; //R0
     newTask->p_psp = temp_psp;
 
 }

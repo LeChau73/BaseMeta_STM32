@@ -185,19 +185,22 @@ void EXTI9_5_IRQHandler(void) {
 
 int main(void) 
 {
+    SEGGER_RTT_Init();
+    RTT_LOG_BRIGHT_RED("=====Hello RTT!=====\n");
 
     // Refer todo để check cây test
     CreateTask("Task1", 4, 500, NULL, NULL);
 
 
     // __asm volatile ("SVC #3"); //BUG: Không gọi SVC trong IRQ
-    ITM_Init(false);
-    myPrintf("I am using ITM print for debug\n");
+    //ITM_Init(false);
+    //myPrintf("I am using ITM print for debug\n");
     //ITM_SendString("Hello");
-    SEGGER_RTT_Init();
-    RTT_LOG_BRIGHT_RED("=====Hello RTT!=====\n");
 
-    SEGGER_RTT_WriteString(0, RTT_CTRL_CLEAR); // Clear screen
+    //DEBUG: 31/1/2026
+
+
+
 
     //Load from memory
     //__asm volatile ("LDR R3, %0"
@@ -211,16 +214,27 @@ int main(void)
     //__asm volatile ("MOV %0, R0" : "=r"(controlVal));
    
     configGpio();
+
+    usart_config config;
+    config.length = 9;
+    config.baudrate = 9600;
+    char* buffer = "hello";
+
+    HAL_uart_Init(&config);
+    HAL_uart_tran1byte('c');
+    HAL_uart_tranMul(buffer, 6);
+    LOG_REG_COLOR(USART2->USART_SR);
     //BUG: Chi enable line 1
     //TRIGGER_INTERRUPT_EVENT(EXTI_LINE_0);
     LOG_REG_COLOR1(EXTI->SWIER);
     LOG_REG_COLOR1(EXTI->PR);
     while (1) {
-        GPIO_Toogle( &(GPIO_Pin_t){GPIOD, GPIO_PIN_12 | GPIO_PIN_13 | GPIO_PIN_14 | GPIO_PIN_15} );
+        //GPIO_Toogle( &(GPIO_Pin_t){GPIOD, GPIO_PIN_12 | GPIO_PIN_13 | GPIO_PIN_14 | GPIO_PIN_15} );
 
         for (volatile int i = 0; i < 1000000; i++); // Delay giả lập
-        //led_on(12);
+        led_on(12);
         for (volatile int i = 0; i < 1000000; i++); // Delay giả lập
+        led_off(12);
         //SEGGER_RTT_WriteString(0, "Hello RTTsdsad!\n");
     }
 
@@ -249,6 +263,7 @@ void configGpio()
     __HAL_RCC_GPIOD_CLK_ENABLE();
     __HAL_RCC_GPIOC_CLK_ENABLE();
     __HAL_RCC_GPIOB_CLK_ENABLE();
+    __HAL_RCC_GPIOA_CLK_ENABLE();
 
     GPIO_Pin_t gpio = { GPIOD , GPIO_PIN_12 | GPIO_PIN_13 | GPIO_PIN_14 | GPIO_PIN_15};
     gpio.port->OSPEEDR = (uint32_t)0x0000C000; //Case 1: không ảnh hưởng cũ
@@ -266,6 +281,9 @@ void configGpio()
     configAF.speed = HIGH_SPEED;
     GPIO_Pin_t gpioAF = { GPIOA, GPIO_PIN_2 | GPIO_PIN_3 };
     GPIO_Init(&gpioAF , &configAF);
+    RTT_printf("Expected uart2 GPIO2 : ");
+    LOG_REG_COLOR(GPIOA->AFRL);
+    LOG_REG_COLOR(GPIOA->MODER);
     //EXPEC: GPIOA->AFR[0] = 0x00007700;
 
     //Testcase for exti

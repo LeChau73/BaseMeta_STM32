@@ -24,7 +24,7 @@ extern uint32_t _eheap;
 // Khai báo hàm main
 extern int main(void);
 extern void __libc_init_array(void);
-
+void EnableFPU(void);
 #define GPIOD_BASE     0x40020C00UL
 #define RCC_AHB1EN      (*(volatile unsigned int *)(RCC_BASE + 0x30))
 #define GPIOD_MODER    (*(volatile unsigned int *)(GPIOD_BASE + 0x00))
@@ -317,6 +317,8 @@ void Reset_Handler(void)
 
     gpio_init();
 
+    EnableFPU(); //Enalbe FPU
+
     // 3. Gọi main
     main();
 
@@ -324,3 +326,11 @@ void Reset_Handler(void)
     while(1);
 }
 
+//TODO: Thử Disable và trace xem cách nhận biêt làm sao mà lỗi FPU
+void EnableFPU(void) {
+    /* Truy cập thanh ghi CPACR tại địa chỉ 0xE000ED88
+       Cấu hình bit 20, 21, 22, 23 để cho phép Full Access (11b) 
+       cho Coprocessor CP10 và CP11 (đây là FPU)
+    */
+    SCB->CPACR |= ((3UL << 10*2) | (3UL << 11*2)); 
+}

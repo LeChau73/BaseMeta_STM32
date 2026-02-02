@@ -2,7 +2,7 @@
 #define CORE_M4
 
 #include <stdint.h>
-
+#include "SEGGER_RTT.h"
 #ifdef __cplusplus
 extern "C"
 {
@@ -259,6 +259,7 @@ typedef struct
 #define PERIPH_BASE           (0x40000000UL) /*!< Peripheral base address in the alias region */
 #define AHB1PERIPH_BASE       (PERIPH_BASE + 0x00020000UL)
 #define FLASH_R_BASE          (AHB1PERIPH_BASE + 0x3C00UL)
+        
 
 #define RCC_BASE           0x40023800
 #define RCC_AHB1ENR        RCC_BASE + 0x30
@@ -350,11 +351,11 @@ typedef struct
 
 
 
-#define SET_BIT(REG, BIT)     ((REG) |= (BIT))
+#define SET_BIT(REG, BIT)     ((REG) |= (0x01U << BIT))
 
-#define CLEAR_BIT(REG, BIT)   ((REG) &= ~(BIT))
+#define CLEAR_BIT(REG, BIT)   ((REG) &= ~(0x01U << BIT))
 
-#define READ_BIT(REG, BIT)    ((REG) & (BIT))
+#define READ_BIT(REG, BIT)    ((REG) && (0x01U << BIT))
 
 #define CLEAR_REG(REG)        ((REG) = (0x0))
 
