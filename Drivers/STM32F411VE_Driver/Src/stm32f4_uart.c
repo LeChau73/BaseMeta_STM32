@@ -1,4 +1,14 @@
 #include "stm32f4_usart.h"
+// Callback for Error handler
+ void (*func_OverrunError)(uart_log_level log_level) = NULL;
+
+// Callback for complete receiver
+ uart_status (*func_receiverComplete)(char *buff)= NULL;
+
+// Callback for Trans handler
+ uart_status (*func_transComplete)(uint8_t data)= NULL;
+
+
 
 
 uart_status HAL_uart_Init(usart_config* config) {
@@ -29,8 +39,6 @@ uart_status HAL_uart_Init(usart_config* config) {
     temp = USART2->USART_BRR;
     // Clear
     temp = CLEAR_REG(temp);
-
-    // Modify
 
     //get bit over
     if((USART2->USART_CR1 >> 15) & 0x01) {
@@ -91,11 +99,32 @@ uart_status HAL_uart_Init(usart_config* config) {
             RTT_printf("ERROR : length cannot valid %d ", config->length);
             return ERROR_UART;
     }
-    // Set TE bit ->  send idle frame
-    SET_BIT(USART2->USART_CR1, 3);
+
+    switch(config->config_mode) {
+        case MODE_SEND:
+            // Set TE bit ->  send idle frame
+            SET_BIT(USART2->USART_CR1, 3);
+            break;
+        case MODE_RECEVICE:
+            // Set RE bit -> receiver frame
+            SET_BIT(USART2->USART_CR1, 13);
+            break;
+        case ALL:
+            // Set TE bit ->  send idle frame
+            SET_BIT(USART2->USART_CR1, 3);
+            // Set RE bit -> receiver frame
+            SET_BIT(USART2->USART_CR1, 13);
+            break;
+        default:
+            RTT_printf("Cannot choose mode recevice or send \n");
+            return ERROR_UART;
+    }
+
+    // Enable ISR for AURT
+    USART2->USART_CR1 |= config->configISR;
 
 
-    LOG_REG_COLOR(USART2->USART_SR);
+    //LOG_REG_COLOR(USART2->USART_SR);
     //TODO: các option khác
 
     return SUCCESS_UART;
@@ -103,43 +132,62 @@ uart_status HAL_uart_Init(usart_config* config) {
 
 // Gửi 1 byte có đợi
 uart_status HAL_uart_tran1byte(uint8_t data) {
-    LOG_REG_COLOR(USART2->USART_SR);
     // wait until TXE=1 , BIT 7
     uint32_t bit = READ_BIT(USART2->USART_SR, 7);
     RTT_printf("bit = %d\n",bit);
     if(READ_BIT(USART2->USART_SR, 7) == 1) {
         USART2->USART_DR = data;
         //TEX cleared after write to DR
-        LOG_REG_COLOR(USART2->USART_SR);
     }
     //Đợi cho đến khi nào TC(tran complete)
     while(!(USART2->USART_SR & (0x01 << 6)));
-    LOG_REG_COLOR(USART2->USART_SR);
 }
 
 //NOTE:
     // Nếu gửi nhiều byte((TXE == 0)) thì TC k thể set lên 1 được
     // Bởi vì write vào DR thì TXE sẽ được clear
 uart_status HAL_uart_tranMul(uint8_t buffer[], int size) {
-    LOG_REG_COLOR(USART2->USART_SR);
     if(READ_BIT(USART2->USART_SR, 7) == 1) {
         for(int i = 0; i < size; i++) {
             USART2->USART_DR = buffer[i];
             // Đợi TXE=1 ,DR empty
-            LOG_REG_COLOR(USART2->USART_SR);
+
             while(!READ_BIT(USART2->USART_SR, 7));
         }
     }
-    LOG_REG_COLOR(USART2->USART_SR);
+
     while(!(USART2->USART_SR && (0x01 << 6)));
     
 }
 
+/*  number_Frame : Số lượng frame break muốn gửi đi */
+uart_status HAL_send_break_frame(uint8_t number_Frame) {
+    // Wait for bit SBK = 0
+    while(number_Frame--) {
+        while(READ_BIT(USART2->USART_CR1, 0));
+        SET_BIT(USART2->USART_CR1, 0);
+    }
+    return SUCCESS_UART;
+}
+
+uart_status HAL_uart_receiver1byte(char* buffer) {
+    // Wait for until RXNE == 1 corresponds to data from shift register has tran to RDR
+    // Can be read
+    if(buffer == NULL)
+        return ERROR_UART;
+    while(READ_BIT(USART2->USART_SR, 5));
+    *buffer = (char)USART2->USART_DR;
+    return SUCCESS_UART;
+}
 
 
-
-
-
+void func_OverrunErrorHander(uart_log_level log_level) {
+    // Xử lý lỗi Overrun
+    // Nhớ trình tự xóa ORE: Đọc SR rồi đọc DR
+    uint32_t dummy = USART2->USART_SR;
+    dummy = USART2->USART_DR;
+    (void)dummy;
+}
 
 
 // AI viết: dùng để đọc clock cấp vào UART2(APB1)

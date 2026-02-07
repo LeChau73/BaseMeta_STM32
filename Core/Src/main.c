@@ -181,49 +181,46 @@ void EXTI9_5_IRQHandler(void) {
     LOG_REG_COLOR1(EXTI->PR);
 }
 
-//
+
+
 
 int main(void) 
 {
+    //
+    func_receiverComplete = HAL_uart_receiver1byte;
+    func_transComplete = HAL_uart_tran1byte;
+    func_OverrunError = func_OverrunErrorHander;
     SEGGER_RTT_Init();
     RTT_LOG_BRIGHT_RED("=====Hello RTT!=====\n");
 
     // Refer todo để check cây test
     CreateTask("Task1", 4, 500, NULL, NULL);
 
-
     // __asm volatile ("SVC #3"); //BUG: Không gọi SVC trong IRQ
     //ITM_Init(false);
     //myPrintf("I am using ITM print for debug\n");
     //ITM_SendString("Hello");
-
-    //DEBUG: 31/1/2026
-
-
-
-
-    //Load from memory
-    //__asm volatile ("LDR R3, %0"
-    //                :
-    //                :"m"(counter) );
-//
-    //__asm volatile ("LDR R0, [R3]");
-//
-    //__asm volatile ("MRS R0, CONTROL");
-    //uint32_t controlVal = 0;
-    //__asm volatile ("MOV %0, R0" : "=r"(controlVal));
    
     configGpio();
 
     usart_config config;
-    config.length = 9;
+    config.length = 8;
     config.baudrate = 9600;
+    config.configISR = ENABLE_TRANS | ENABLE_RECIVER;
+    config.config_mode = ALL;
     char* buffer = "hello";
 
-    HAL_uart_Init(&config);
-    HAL_uart_tran1byte('c');
-    HAL_uart_tranMul(buffer, 6);
-    LOG_REG_COLOR(USART2->USART_SR);
+    int status;
+
+    status = HAL_uart_Init(&config);
+    status = HAL_uart_tran1byte('c');
+    status = HAL_uart_tranMul(buffer, 6);
+
+    status = HAL_send_break_frame(5);
+
+    if(status == -1)
+        RTT_printf("Errorr\n");
+
     //BUG: Chi enable line 1
     //TRIGGER_INTERRUPT_EVENT(EXTI_LINE_0);
     LOG_REG_COLOR1(EXTI->SWIER);
@@ -239,6 +236,32 @@ int main(void)
     }
 
     return 0;
+}
+
+char buff[20];
+char nextData = 'c';
+
+// Handler UART2
+void USART2_IRQHandler(void) {
+    //Parse bit in register SR to noticed
+    volatile uint32_t valueSR = USART2->USART_SR;
+    uart_status status;
+    uart_log_level level_log;
+RTT_printf("Mask: 0x%X\n", (1 << 6));
+RTT_printf("SR: 0x%X\n", valueSR);
+RTT_printf("Result: 0x%X\n", valueSR & (1 << 6));
+    if  ( ( valueSR & (1 << 6) ) != 0 ) {
+        //Trans comple
+        status = func_transComplete(nextData);
+        //TODO: Clear lại phần này
+        USART2->USART_SR &= ~(0x01 << 6); //Clear TC
+        USART2->USART_SR &= ~(0x01 << 7); //Clear TXE
+    } else if ( (valueSR & (1 << 5) ) != 0  ) {
+        status = func_receiverComplete(buff);
+    } else if ( (valueSR & (1 << 3) ) != 0 ) {
+        func_OverrunError(ERROR_UART_LOG);
+    }
+    LOG_REG_COLOR(USART2->USART_SR);
 }
 
 
@@ -284,6 +307,7 @@ void configGpio()
     RTT_printf("Expected uart2 GPIO2 : ");
     LOG_REG_COLOR(GPIOA->AFRL);
     LOG_REG_COLOR(GPIOA->MODER);
+    NVIC_EnableIRQ(USART2_IRQn);
     //EXPEC: GPIOA->AFR[0] = 0x00007700;
 
     //Testcase for exti
@@ -297,12 +321,12 @@ void configGpio()
     //BUG: Pending đã enable,nhưng k thể interrupt
     //@day : 12/11
     NVIC_EnableIRQ(EXTI0_IRQn);
-    LOG_REG_COLOR1(GPIOA);
-    LOG_REG_COLOR1(&gpioEXTI.port->PUPDR);
-    LOG_REG_COLOR1(gpioEXTI.port->MODER);
-    LOG_REG_COLOR1(gpioEXTI.port->PUPDR);
-    LOG_REG_COLOR1(gpioEXTI.port->AFRL);
-    LOG_REG_COLOR1(gpioEXTI.port->AFRH);
+    //LOG_REG_COLOR1(GPIOA);
+    //LOG_REG_COLOR1(&gpioEXTI.port->PUPDR);
+    //LOG_REG_COLOR1(gpioEXTI.port->MODER);
+    //LOG_REG_COLOR1(gpioEXTI.port->PUPDR);
+    //LOG_REG_COLOR1(gpioEXTI.port->AFRL);
+    //LOG_REG_COLOR1(gpioEXTI.port->AFRH);
 
     
     //Expected :

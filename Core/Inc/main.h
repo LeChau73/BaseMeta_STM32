@@ -41,6 +41,7 @@ typedef enum {
     ground_0_and_sub_16 = 0b100 << 8,   // Group None  , Sub [7:4]
 } BinaryPoint;
 
+void USART2_IRQHandler(void);
 
 // Set the priority grouping
 void NVIC_SetPriorityGrouping(uint32_t priority_grouping) {
