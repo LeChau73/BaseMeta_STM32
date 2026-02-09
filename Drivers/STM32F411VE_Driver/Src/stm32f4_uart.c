@@ -16,7 +16,10 @@ uart_status HAL_uart_Init(usart_config* config) {
     //Enable clock mới ghi được
     //mọi thao tác ghi vào thanh ghi đó đều vô hiệu (giá trị vẫn giữ nguyên là 0).
     RCC->APB1ENR |= (1 << 17); // Bật USART2 clock (Bit 17)
+    USART2->USART_DR = 0;
+    USART2->USART_SR &= ~(1 << 6);
 
+    LOG_REG_COLOR(USART2->USART_SR);
     uint8_t current_over;
     float USARTDIV;
     //For clock mà đi vào UART(APB1)
@@ -28,9 +31,9 @@ uart_status HAL_uart_Init(usart_config* config) {
     // Read
     uint32_t temp = USART2->USART_CR1;
     // Clear
-    temp = CLEAR_BIT(temp, 13);
+    temp = CLEAR_BIT_UART(temp, 13);
     // Modify
-    temp = SET_BIT(temp, 13);
+    temp |= SET_BIT_UART(temp, 13);
 
     USART2->USART_CR1 = temp;
 
@@ -90,10 +93,10 @@ uart_status HAL_uart_Init(usart_config* config) {
     // -----------START CONFIG LENGHT----------------
     switch(config->length) {
         case 8:
-            CLEAR_BIT(USART2->USART_CR1, 12);
+            CLEAR_BIT_UART(USART2->USART_CR1, 12);
             break;
         case 9:
-            SET_BIT(USART2->USART_CR1, 12);
+            SET_BIT_UART(USART2->USART_CR1, 12);
             break;
         default:
             RTT_printf("ERROR : length cannot valid %d ", config->length);
@@ -103,17 +106,17 @@ uart_status HAL_uart_Init(usart_config* config) {
     switch(config->config_mode) {
         case MODE_SEND:
             // Set TE bit ->  send idle frame
-            SET_BIT(USART2->USART_CR1, 3);
+            SET_BIT_UART(USART2->USART_CR1, 3);
             break;
         case MODE_RECEVICE:
             // Set RE bit -> receiver frame
-            SET_BIT(USART2->USART_CR1, 13);
+            SET_BIT_UART(USART2->USART_CR1, 13);
             break;
         case ALL:
             // Set TE bit ->  send idle frame
-            SET_BIT(USART2->USART_CR1, 3);
+            SET_BIT_UART(USART2->USART_CR1, 3);
             // Set RE bit -> receiver frame
-            SET_BIT(USART2->USART_CR1, 13);
+            SET_BIT_UART(USART2->USART_CR1, 13);
             break;
         default:
             RTT_printf("Cannot choose mode recevice or send \n");
@@ -124,7 +127,8 @@ uart_status HAL_uart_Init(usart_config* config) {
     USART2->USART_CR1 |= config->configISR;
 
 
-    //LOG_REG_COLOR(USART2->USART_SR);
+    LOG_REG_COLOR(USART2->USART_CR1);
+    LOG_REG_COLOR(USART2->USART_SR);
     //TODO: các option khác
 
     return SUCCESS_UART;
@@ -133,9 +137,7 @@ uart_status HAL_uart_Init(usart_config* config) {
 // Gửi 1 byte có đợi
 uart_status HAL_uart_tran1byte(uint8_t data) {
     // wait until TXE=1 , BIT 7
-    uint32_t bit = READ_BIT(USART2->USART_SR, 7);
-    RTT_printf("bit = %d\n",bit);
-    if(READ_BIT(USART2->USART_SR, 7) == 1) {
+    if( ((USART2->USART_SR & 0x01 << 7)) != 0 ) {
         USART2->USART_DR = data;
         //TEX cleared after write to DR
     }
@@ -147,12 +149,12 @@ uart_status HAL_uart_tran1byte(uint8_t data) {
     // Nếu gửi nhiều byte((TXE == 0)) thì TC k thể set lên 1 được
     // Bởi vì write vào DR thì TXE sẽ được clear
 uart_status HAL_uart_tranMul(uint8_t buffer[], int size) {
-    if(READ_BIT(USART2->USART_SR, 7) == 1) {
+    if(READ_BIT_UART(USART2->USART_SR, 7) == 1) {
         for(int i = 0; i < size; i++) {
             USART2->USART_DR = buffer[i];
             // Đợi TXE=1 ,DR empty
 
-            while(!READ_BIT(USART2->USART_SR, 7));
+            while(!READ_BIT_UART(USART2->USART_SR, 7));
         }
     }
 
@@ -163,9 +165,17 @@ uart_status HAL_uart_tranMul(uint8_t buffer[], int size) {
 /*  number_Frame : Số lượng frame break muốn gửi đi */
 uart_status HAL_send_break_frame(uint8_t number_Frame) {
     // Wait for bit SBK = 0
+    volatile uint32_t temp = USART2->USART_CR1;
     while(number_Frame--) {
-        while(READ_BIT(USART2->USART_CR1, 0));
-        SET_BIT(USART2->USART_CR1, 0);
+        SET_BIT_UART(USART2->USART_CR1, 0);
+        // Thay vì __ISB(); hãy dùng:
+        __asm volatile ("isb 0xF":::"memory");
+
+        // Thay vì __DSB(); hãy dùng:
+        __asm volatile ("dsb 0xF":::"memory");
+        while(! ( USART2->USART_CR1 & 0x01) );
+        LOG_REG(USART2->USART_CR1);
+        
     }
     return SUCCESS_UART;
 }
@@ -175,7 +185,7 @@ uart_status HAL_uart_receiver1byte(char* buffer) {
     // Can be read
     if(buffer == NULL)
         return ERROR_UART;
-    while(READ_BIT(USART2->USART_SR, 5));
+    while(READ_BIT_UART(USART2->USART_SR, 5));
     *buffer = (char)USART2->USART_DR;
     return SUCCESS_UART;
 }

@@ -7,6 +7,12 @@
 
 #define USART2   ((Usart_Type*)USART2_BASE)
 
+#define SETBIT_UART(REG, BIT)   (REG |= )
+
+
+#define SET_BIT_UART(REG, BIT)     ((REG) |= (0x01U << BIT))
+#define CLEAR_BIT_UART(REG, BIT)   ((REG) &= ~(0x01U << BIT))
+#define READ_BIT_UART(REG, BIT)    ((REG) && (0x01U << BIT))
 
 typedef struct {
     __IOM uint32_t USART_SR;
@@ -41,6 +47,7 @@ typedef enum {
     ENABLE_RECIVER  =   (0x1 << 5), //RXNEIE = 1 bit 6
     DISNABLE_RECIVER =  ~(0x1 << 5), 
     Overrun_Error   =   ENABLE_RECIVER, //RXNEIE = 1
+    DISNABLE_ALL = 0x00
     // more .. 
 }config_interrupt;
 
