@@ -2,13 +2,15 @@
 #define UART_H
 #include "core_m4.h"
 #include "stm32f411xe.h"
-
+#include <string.h>
 #define USART2_BASE  (PERIPH_BASE + 0x4400UL)
 
 #define USART2   ((Usart_Type*)USART2_BASE)
 
-#define SETBIT_UART(REG, BIT)   (REG |= )
-
+#define EMPTY 0
+#define FULL 1
+#define AVAILABLE 2
+#define TX_BUF_SIZE 128
 
 #define SET_BIT_UART(REG, BIT)     ((REG) |= (0x01U << BIT))
 #define CLEAR_BIT_UART(REG, BIT)   ((REG) &= ~(0x01U << BIT))
@@ -51,6 +53,35 @@ typedef enum {
     // more .. 
 }config_interrupt;
 
+/* ---- Descript about ring buffer -----
+ * head : point to index avalable
+ * tail : point to index is reading
+ * ring_buffer full  when (head + 1) % SIZE == tail 
+ * ring buffer empty when tail == head (tức là tail gặp head )
+ */
+
+
+typedef struct
+{
+  char buff[TX_BUF_SIZE];   //MAX 128 charate
+  uint8_t head; // write index
+  uint8_t tail; // read index
+  uint8_t status;
+} ring_buffer_uart;
+
+typedef enum {
+    IDLE,
+    BUSY
+}ty_status_engine;
+
+typedef void (*uart_callback_t)(void);
+
+typedef struct {
+    ring_buffer_uart    cache_buffer;
+    uart_callback_t     tranComplete_ptr;
+    ty_status_engine    status_engine;
+} uart_feature;
+
 //TODO: Refactor to optimize memmory
 typedef struct
 {
@@ -73,16 +104,45 @@ uart_status HAL_uart_tranMul(uint8_t buffer[],int size);
 uart_status HAL_send_break_frame(uint8_t number_Frame);
 uart_status HAL_uart_receiver1byte(char* buffer);
 uart_status HAL_uart_receiverMul(char* buffer);
+/*  Purpose : Ghi dữ liệu vào ring_buffer
+    data : dữ liệu gửi đi
+    len : size của data
+    flush : muốn gửi ra luôn k,vì đang nằm trong bộ đệm
+*/
+void uart_write_it(char* data, int len, int flush);
+
+/* Purpose : register callback when comple buffer tran */
+//BUG: Tại sao inline thì k được
+void register_callback_write_complete(uart_callback_t callback);
+
+/* Control call ISR */
+ty_status_engine control_engine_ISR(void);
+
+uart_status uart_tran_hander_it(void);
+
+void call_callback_uart(void);
+
+void initStructure(uart_feature* config);
+
 uint32_t get_pclk1_frequency(void);
 void func_OverrunErrorHander(uart_log_level log_level);
 
-// Callback for Error handler
-extern void (*func_OverrunError)(uart_log_level log_level);
 
-// Callback for complete receiver
-extern uart_status (*func_receiverComplete)(char *buff);
+/* ---------  API for Ring buffer ------------ */
+/* Check trạng thái của ring hiện tại [ FULL | EMPTY | AVAILABLE ] */
 
-// Callback for Trans handler
-extern uart_status (*func_transComplete)(uint8_t data);
+static void ring_buffer_init(ring_buffer_uart* rb);
+
+uint8_t status_ring_buffer(uart_feature* config);
+
+/* Tính số lượng byte còn lại có sẵn(available) có trong ring */
+static inline uint8_t ring_buffer_count_available(ring_buffer_uart* rb);
+
+/* return về index của head hiện tại */
+static uint8_t ring_buffer_push(ring_buffer_uart* rb,char data);
+
+static uint8_t ring_buffer_push_mul(ring_buffer_uart* rb,char* data);
+
+static char ring_buffer_pop(ring_buffer_uart* rb);
 
 #endif

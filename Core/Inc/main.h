@@ -18,19 +18,38 @@
 #include "myRTOS.h"
 #include "stm32f4_usart.h"
 
-extern void initialize_monitor_handles(void);
-extern int test_extern;
+
+// Configuage clock
+#define RCC_CR              (*(volatile uint32_t*)0x40023800)
+#define RCC_PLLCFGR         (*(volatile uint32_t*)0x40023804)
+#define RCC_CFGR            (*(volatile uint32_t*)0x40023808)
+
+#define RTT_printf(...)  SEGGER_RTT_printf(0,__VA_ARGS__)
+#define LOG_REG(name) SEGGER_RTT_printf(0, #name " = 0x%08X\n", (unsigned int)(name))  //for register
+//%08X là một định dạng cho printf:
+//%X : in số nguyên không dấu dưới dạng thập lục phân chữ IN HOA (A..F).
+//8 : chiều rộng tối thiểu là 8 ký tự.
+//0 : đệm bằng ký tự 0 (nếu độ dài thực tế nhỏ hơn 8).
+
+
+//TODO: check xem đang dùng clock nào
+//RCC_CFGR 0x08
+
+
+
+#define ROM_M4_PID4   (*(volatile uint32_t*)0xE00FFFD0) // Peripheral ID4 in ROM table (Cortex-M4)
+
+#define ROM_M4_CPM3   (*(volatile uint32_t*)0xE00FFFFC) // Peripheral ID4 in ROM table (Cortex-M4)
+
+#define ROM_M4_SCS    (*(volatile uint32_t*)0xE00FF000) // Peripheral ID4 in ROM table (Cortex-M4)
+
+
 
 struct Dummy {
     int member1;
     int member2;
 };
 
-int global1 = 5; // Global variable located in RAM(section .data)
-int global2; // Global variable located in RAM(section .bss)
-
-inline uint32_t  __get_MSP();
-inline void ConfigClockHSE16MHZ();
 
 // Priority ground
 typedef enum {
@@ -41,8 +60,36 @@ typedef enum {
     ground_0_and_sub_16 = 0b100 << 8,   // Group None  , Sub [7:4]
 } BinaryPoint;
 
-void USART2_IRQHandler(void);
 
+
+
+int global1 = 5; // Global variable located in RAM(section .data)
+int global2; // Global variable located in RAM(section .bss)
+
+inline uint32_t  __get_MSP();
+inline void ConfigClockHSE16MHZ();
+extern uart_feature uart_core;
+
+// Callback for Error handler
+void (*func_OverrunError)(uart_log_level log_level) = NULL;
+
+// Callback for complete receiver
+uart_status (*func_receiverComplete)(char *buff)= NULL;
+
+// Callback for Trans handler
+uart_status (*func_transHandler)(void) = NULL;
+
+extern void initialize_monitor_handles(void);
+extern int test_extern;
+void register_callback_write_complete(uart_callback_t callback);
+
+
+void USART2_IRQHandler(void);
+void HardFault_Handler(uint32_t *pStack);
+void EXTI9_5_IRQHandler(void);
+void SVC_Handler(void);
+void EXTI0_IRQHandler(void);
+void configGpio();
 // Set the priority grouping
 void NVIC_SetPriorityGrouping(uint32_t priority_grouping) {
 
@@ -70,7 +117,7 @@ void NVIC_ConfigPriority(BinaryPoint config) {
     
 }
 
-void Reset_MCU() {
+inline void Reset_MCU() {
     uint32_t temp = SCB->AIRCR;
     // unlock key
     temp |= (0x5FA << 16);
@@ -79,7 +126,5 @@ void Reset_MCU() {
 
     SCB->AIRCR |= 0x1 << 2;
 }
-
-
 
 #endif

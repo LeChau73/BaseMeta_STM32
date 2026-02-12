@@ -1,12 +1,8 @@
 #include "stm32f4_usart.h"
-// Callback for Error handler
- void (*func_OverrunError)(uart_log_level log_level) = NULL;
 
-// Callback for complete receiver
- uart_status (*func_receiverComplete)(char *buff)= NULL;
 
-// Callback for Trans handler
- uart_status (*func_transComplete)(uint8_t data)= NULL;
+uart_feature uart_core;
+
 
 
 
@@ -113,10 +109,15 @@ uart_status HAL_uart_Init(usart_config* config) {
             SET_BIT_UART(USART2->USART_CR1, 13);
             break;
         case ALL:
+        LOG_REG_COLOR(USART2->USART_SR);
             // Set TE bit ->  send idle frame
             SET_BIT_UART(USART2->USART_CR1, 3);
             // Set RE bit -> receiver frame
             SET_BIT_UART(USART2->USART_CR1, 13);
+            //NOTE: Sau khi set TE thì idle frame tran thì
+            //BIT TXE = 1 & TC = 1
+
+            LOG_REG_COLOR(USART2->USART_SR);
             break;
         default:
             RTT_printf("Cannot choose mode recevice or send \n");
@@ -124,8 +125,7 @@ uart_status HAL_uart_Init(usart_config* config) {
     }
 
     // Enable ISR for AURT
-    USART2->USART_CR1 |= config->configISR;
-
+    //USART2->USART_CR1 |= config->configISR;
 
     LOG_REG_COLOR(USART2->USART_CR1);
     LOG_REG_COLOR(USART2->USART_SR);
@@ -153,7 +153,6 @@ uart_status HAL_uart_tranMul(uint8_t buffer[], int size) {
         for(int i = 0; i < size; i++) {
             USART2->USART_DR = buffer[i];
             // Đợi TXE=1 ,DR empty
-
             while(!READ_BIT_UART(USART2->USART_SR, 7));
         }
     }
@@ -166,15 +165,19 @@ uart_status HAL_uart_tranMul(uint8_t buffer[], int size) {
 uart_status HAL_send_break_frame(uint8_t number_Frame) {
     // Wait for bit SBK = 0
     volatile uint32_t temp = USART2->USART_CR1;
+    uint32_t timeout = 100000;
     while(number_Frame--) {
         SET_BIT_UART(USART2->USART_CR1, 0);
-        // Thay vì __ISB(); hãy dùng:
-        __asm volatile ("isb 0xF":::"memory");
-
-        // Thay vì __DSB(); hãy dùng:
+        
+        // Flush memory buffer to pheripheral
         __asm volatile ("dsb 0xF":::"memory");
-        while(! ( USART2->USART_CR1 & 0x01) );
         LOG_REG(USART2->USART_CR1);
+        while((USART2->USART_CR1 & 0x01) && timeout--) {
+            __asm volatile ("NOP");
+        }
+        
+        if(timeout == 0) return ERROR_UART;
+        
         
     }
     return SUCCESS_UART;
@@ -190,13 +193,128 @@ uart_status HAL_uart_receiver1byte(char* buffer) {
     return SUCCESS_UART;
 }
 
-
 void func_OverrunErrorHander(uart_log_level log_level) {
     // Xử lý lỗi Overrun
     // Nhớ trình tự xóa ORE: Đọc SR rồi đọc DR
     uint32_t dummy = USART2->USART_SR;
     dummy = USART2->USART_DR;
     (void)dummy;
+}
+
+uint8_t status_ring_buffer(uart_feature* config) {
+    uint8_t head = config->cache_buffer.head;
+    uint8_t tail = config->cache_buffer.tail;
+    if( (head + 1 ) % TX_BUF_SIZE == tail)
+    {
+        return FULL;
+    } else if ( head == tail ) {
+        return EMPTY;
+    }
+        
+    return AVAILABLE;
+}
+
+void uart_write_it(char* data, int len, int flush) {
+    if(data == NULL)
+        return;
+
+    // Chech ring buffer is avalable
+    uint8_t status_ring = status_ring_buffer(&uart_core);
+    // Check ring còn trống or là đang empty
+    if( status_ring == AVAILABLE || status_ring == EMPTY ) {
+        uint8_t index = 0;
+        while ( data[index] != '\0' && len-- != 0 )
+        {
+            ring_buffer_push(&uart_core.cache_buffer, data[index++]);
+        }
+    }
+
+    // Check có thể tran được k
+    // Nếu mode flush thì đẩy ra luôn hoặc ring đang full
+    // Nếu không thì ghi đến lúc nào đầy mới đẩy
+    if ( flush == 1 || status_ring_buffer(&uart_core) == FULL ) {
+        control_engine_ISR();
+    }
+
+}
+
+ty_status_engine control_engine_ISR() {
+    uint16_t timeout = 10000;
+    // Wait for until TXE == 1
+    while (READ_BIT_UART(USART2->USART_SR, 7) != 1 && timeout--) {
+        __asm volatile("NOP");
+    }
+
+    if(timeout == 0) {
+        return BUSY;
+    }
+    RTT_printf("status ring = %d\n", status_ring_buffer(&uart_core));
+    // Get first byte
+    if( status_ring_buffer(&uart_core) != EMPTY ) {
+        USART2->USART_DR = ring_buffer_pop(&uart_core.cache_buffer);     // -> Triggle ISR
+        USART2->USART_CR1 |= (0x1 << 6); // TCIE = 1 bit 6 CR1 -> Triggle ISR
+        // XEm TC ở đây == 1 k?
+    }
+
+}
+
+void initStructure(uart_feature* config) {
+    
+    for(uint8_t i = 0 ; i < TX_BUF_SIZE; i++ ) {
+        config->cache_buffer.buff[i] = 0;
+    }
+    config->tranComplete_ptr = NULL;
+
+}
+
+void register_callback_write_complete(uart_callback_t callback) {
+    initStructure(&uart_core);
+    uart_core.tranComplete_ptr = callback;
+}
+
+void call_callback_uart() {
+    if(uart_core.tranComplete_ptr != NULL)
+    {
+        uart_core.tranComplete_ptr();
+    } else {
+        RTT_printf("Cannot register callback\n");
+    }
+
+}
+
+
+uart_status uart_tran_hander_it(void) {
+
+    //RTT_printf("Send byte [%c]\n", );
+     //BUG: lấy data chưa đúng
+    USART2->USART_DR = ring_buffer_pop(&uart_core.cache_buffer);
+
+    return SUCCESS_UART;
+}
+
+
+uint8_t ring_buffer_count_available(ring_buffer_uart* rb) {
+    //count số lượng còn lại (TX_BUF_SIZE - 1) - head;
+    //0 ---- tail(5) --- head(8) --- end(10)
+    //trống từ 0 -> 5 + 8 -> 10 => 7
+    uint8_t total = (TX_BUF_SIZE - 1) - rb->head + rb->tail;
+    return total;
+}
+
+static uint8_t ring_buffer_push(ring_buffer_uart* rb,char data) {
+    rb->buff[rb->head] = data;
+    rb->head = (rb->head + 1) % TX_BUF_SIZE;
+    return rb->head;
+}
+
+static char ring_buffer_pop(ring_buffer_uart* rb) {
+    char data = 0;
+    if(rb->tail != rb->head) {
+        data = rb->buff[rb->tail]; // trả về dữ liệu hiện tại
+        rb->tail = ( rb->tail + 1 ) % TX_BUF_SIZE;
+    }
+    RTT_printf("Send data [%c] \n", data);
+    return data;
 }
 
 

@@ -1,200 +1,28 @@
 #include "main.h"
 #include <stdarg.h>
 
-// Configuage clock
-#define RCC_CR              (*(volatile uint32_t*)0x40023800)
-#define RCC_PLLCFGR         (*(volatile uint32_t*)0x40023804)
-#define RCC_CFGR            (*(volatile uint32_t*)0x40023808)
 
-#define RTT_printf(...)  SEGGER_RTT_printf(0,__VA_ARGS__)
-#define LOG_REG(name) SEGGER_RTT_printf(0, #name " = 0x%08X\n", (unsigned int)(name))  //for register
-//%08X là một định dạng cho printf:
-//%X : in số nguyên không dấu dưới dạng thập lục phân chữ IN HOA (A..F).
-//8 : chiều rộng tối thiểu là 8 ký tự.
-//0 : đệm bằng ký tự 0 (nếu độ dài thực tế nhỏ hơn 8).
+void onCompleteUart(void);
 
-
-//TODO: check xem đang dùng clock nào
-//RCC_CFGR 0x08
-
-
-
-#define ROM_M4_PID4   (*(volatile uint32_t*)0xE00FFFD0) // Peripheral ID4 in ROM table (Cortex-M4)
-
-#define ROM_M4_CPM3   (*(volatile uint32_t*)0xE00FFFFC) // Peripheral ID4 in ROM table (Cortex-M4)
-
-#define ROM_M4_SCS    (*(volatile uint32_t*)0xE00FF000) // Peripheral ID4 in ROM table (Cortex-M4)
-
-
-
-void DWT_DataMaching(int value,volatile void* addrOfValue)
-{
-    *(volatile uint32_t *)0xE0000FB0 = 0xC5ACCE55; // DWT_LAR: Unlock DWT
-    *(volatile uint32_t *)0xE0001000 |= (1 << 0); // DWT_CTRL: CYCCNTENA
-
-
-    
-    *(volatile uint32_t *)0xE0001014 = (uint32_t)addrOfValue; // DWT_COMP1: Địa chỉ sensor_data
-    *(volatile uint32_t *)0xE0001018 = (value) | (0b10 << 0) | (1 << 2); // Data value match + EMITRANGE
-    *(volatile uint32_t *)0xE0000E00 |= (1 << 1); // Enable ITM port 1 for DWT
-    *(volatile uint32_t *)0xE0001024 |= (1 << 24); // Emit ITM event
+void onCompleteUart(void) {
+    RTT_printf("Done write uart\n");
+    //USART2->USART_CR1 &= ~(0x1 << 6); // TCIE = 1 bit 6 CR1 -> DISNABLE ISR
 }
-
-void configGpio();
-
-void valdicFunc(const char* fmt, ...) {
-    va_list va;
-    va_start(va, fmt); //fmt đánh dấu
-
-    if ( *fmt == 'c')
-    {
-        
-    }
-
-    va_arg(va, int );
-
-}
-#define TEXT 7
-const int val = 5;
-int globaldsadsa = 6;
-static int uninit;
-
-
-void EXTI0_IRQHandler(void) {
-    //__asm volatile ("SVC #1"); //BUG: Không gọi SVC trong IRQ 
-    uint32_t reg_pr = EXTI->PR;
-    reg_pr &= ~(1 << 0);
-    EXTI->PR |= reg_pr;
-}
-
-
-__attribute((naked))
-uint32_t __get_MSP() {
-    __asm volatile("MOV R0, #0");
-    __asm volatile ("MRS R0, MSP");
-    __asm volatile ("BX LR");
-}
-
-//naked :loại bỏ các lời gọi hàm trước cho compiler chèn vào
-__attribute((naked)) 
-void SVC_Handler(void) {
-    uint32_t *sp = (uint32_t *)__get_MSP();  // Hoặc PSP nếu User mode
-    uint32_t pc = sp[6];                     // PC khi gọi SVC ~ pc = 0x80000c
-    //TODO:
-    // Trước khi nhảy vào handler pc lưu lệnh sau đó: Vì PC đang trỏ đến lệnh sau SVC
-    // → Lệnh SVC luôn có dạng: 2 bytes = 0xDF xx
-    // Byte thấp: chính là svc_number (từ 0 đến 255)
-    // SVC #3 → được assembler biên dịch thành: 0xDF 03
-    uint32_t aircr = SCB->AIRCR; // kiểm tra MSB hay LSB
-    uint8_t svc_number;
-
-    if (aircr & (1 << 15)) {
-        // Big-endian (hiếm gặp)
-        svc_number = ((uint8_t *)pc) [-1];
-    } else {
-        // Little-endian (luôn là trường hợp này trên STM32F4)
-        svc_number = ((uint8_t *)pc) [-2]; // Đọc byte cuối lệnh SVC (imm là byte 0)
-    }
-
-    
-    switch (svc_number & 0xFF) {             // Mask để lấy imm (0-255)
-        case 3:  // Xử lý cho SVC #3, ví dụ: custom function
-            // Gọi hàm tương ứng, ví dụ: my_custom_syscall();
-            break;
-        // Các case khác...
-    }
-}
-
-//void SVC_Handler(uint32_t* pStack) {
-//
-//
-//    uint32_t stacked_r0  = pStack[0];
-//    uint32_t stacked_r1  = pStack[1];
-//    uint32_t stacked_r2  = pStack[2];
-//    uint32_t stacked_r3  = pStack[3];
-//    uint32_t stacked_r12 = pStack[4];
-//    uint32_t stacked_lr  = pStack[5];   // LR cũ (thường là EXC_RETURN)
-//    uint32_t stacked_pc  = pStack[6];   // ← Đây mới là PC gây lỗi
-//    uint32_t stacked_psr = pStack[7];
-//
-//}
-
-
-void BusFault_Handler(void) {
-
-}
-
-void HardFault_Handler(uint32_t *pStack)
-{
-    RTT_LOG_RED("------- HARD FAULT ------\n");
-
-    uint32_t stacked_r0  = pStack[0];
-    uint32_t stacked_r1  = pStack[1];
-    uint32_t stacked_r2  = pStack[2];
-    uint32_t stacked_r3  = pStack[3];
-    uint32_t stacked_r12 = pStack[4];
-    uint32_t stacked_lr  = pStack[5];   // LR cũ (thường là EXC_RETURN)
-    uint32_t stacked_pc  = pStack[6];   // ← Đây mới là PC gây lỗi
-    uint32_t stacked_psr = pStack[7];
-
-    RTT_printf("R0  = 0x%08X\n", stacked_r0);
-    RTT_printf("R1  = 0x%08X\n", stacked_r1);
-    RTT_printf("R2  = 0x%08X\n", stacked_r2);
-    RTT_printf("R3  = 0x%08X\n", stacked_r3);
-    RTT_printf("R12 = 0x%08X\n", stacked_r12);
-    RTT_printf("LR  = 0x%08X\n", stacked_lr);
-    RTT_printf("PC  = 0x%08X  ←←← LỆNH GÂY LỖI Ở ĐÂY\n", stacked_pc);
-    RTT_printf("PSR = 0x%08X\n", stacked_psr);
-
-    myPrintf("R0  = 0x%x\n", stacked_r0);
-    myPrintf("R1  = 0x%x\n\n", stacked_r1);
-    myPrintf("R2  = 0x%x\n\n", stacked_r2);
-    myPrintf("R3  = 0x%x\n", stacked_r3);
-    myPrintf("R12 = 0x%x\n", stacked_r12);
-    myPrintf("LR  = 0x%x\n", stacked_lr);
-    myPrintf("PC  = 0x%x  ←←← LỆNH GÂY LỖI Ở ĐÂY\n", stacked_pc);
-    myPrintf("PSR = 0x%x\n", stacked_psr);
-
-    // In thêm SP hiện tại (MSP hoặc PSP tùy mode)
-    RTT_printf("Stacked SP  = 0x%08X  (tức là địa chỉ pStack)\n", (uint32_t)pStack);
-
-    // In các thanh ghi fault
-    RTT_printf("HFSR = 0x%08X\n", SCB->HFSR);
-    RTT_printf("CFSR = 0x%08X\n", SCB->CFSR);
-    RTT_printf("BFAR = 0x%08X\n", SCB->BFAR);
-    RTT_printf("MMFAR= 0x%08X\n", SCB->MMFAR);
-
-    myPrintf("HFSR = 0x%x\n", SCB->HFSR);
-    myPrintf("CFSR = 0x%x\n", SCB->CFSR);
-    myPrintf("BFAR = 0x%x\n", SCB->BFAR);
-    myPrintf("MMFAR= 0x%x\n", SCB->MMFAR);
-    //TODO: implement lưu vào flash
-    
-    while(1) {};
-}
-void EXTI9_5_IRQHandler(void) {
-    LOG_REG_COLOR1(EXTI->PR);
-
-    EXTI->PR &= ~(1 << 5);
-    EXTI->PR &= ~(1 << 6);
-
-    LOG_REG_COLOR1(EXTI->PR);
-}
-
-
-
 
 int main(void) 
 {
     //
     func_receiverComplete = HAL_uart_receiver1byte;
-    func_transComplete = HAL_uart_tran1byte;
+    func_transHandler = uart_tran_hander_it;
     func_OverrunError = func_OverrunErrorHander;
+
+    register_callback_write_complete(onCompleteUart);   //Đắng ký hàm call back && init struct uart
+
     SEGGER_RTT_Init();
     RTT_LOG_BRIGHT_RED("=====Hello RTT!=====\n");
 
     // Refer todo để check cây test
-    CreateTask("Task1", 4, 500, NULL, NULL);
+    //CreateTask("Task1", 4, 500, NULL, NULL);
 
     // __asm volatile ("SVC #3"); //BUG: Không gọi SVC trong IRQ
     //ITM_Init(false);
@@ -207,16 +35,22 @@ int main(void)
     config.length = 8;
     config.baudrate = 9600;
     config.configISR = ENABLE_TRANS | ENABLE_RECIVER;
+    //config.configISR = DISNABLE_ALL;
     config.config_mode = ALL;
-    char* buffer = "hello";
+    char* buffer = "First";
 
+
+    
     int status;
 
     status = HAL_uart_Init(&config);
-    status = HAL_uart_tran1byte('c');
-    status = HAL_uart_tranMul(buffer, 6);
+    uart_write_it("Hello", 5, 1);
+    //status = HAL_send_break_frame(1);
+    //status = HAL_uart_tran1byte('c');
+    status = HAL_uart_tranMul(buffer, 5);
+    
 
-    status = HAL_send_break_frame(5);
+
 
     if(status == -1)
         RTT_printf("Errorr\n");
@@ -245,21 +79,32 @@ char nextData = 'c';
 void USART2_IRQHandler(void) {
     //Parse bit in register SR to noticed
     volatile uint32_t valueSR = USART2->USART_SR;
+    LOG_REG_COLOR(USART2->USART_CR1);
+    RTT_printf("CR: 0x%X\n", (1 << 6));
     uart_status status;
     uart_log_level level_log;
-RTT_printf("Mask: 0x%X\n", (1 << 6));
-RTT_printf("SR: 0x%X\n", valueSR);
-RTT_printf("Result: 0x%X\n", valueSR & (1 << 6));
-    if  ( ( valueSR & (1 << 6) ) != 0 ) {
+    RTT_printf("Mask: 0x%X\n", (1 << 6));
+    RTT_printf("SR: 0x%X\n", valueSR);
+    RTT_printf("Result: 0x%X\n", valueSR & (1 << 6));
+    if  ( ( valueSR & (1 << 6) ) != 0 ) { // Kiểm tra cờ TC (Transmission Complete)
+
         //Trans comple
-        status = func_transComplete(nextData);
-        //TODO: Clear lại phần này
-        USART2->USART_SR &= ~(0x01 << 6); //Clear TC
-        USART2->USART_SR &= ~(0x01 << 7); //Clear TXE
+
+        status = func_transHandler();
+        //Clear TXE
+        if(status_ring_buffer(&uart_core) == EMPTY) {
+            call_callback_uart();
+            USART2->USART_CR1 &= ~(0x1 << 6); // TCIE = 1 bit 6 CR1 -> Clear Tiggle ISR
+        }
+
     } else if ( (valueSR & (1 << 5) ) != 0  ) {
+
         status = func_receiverComplete(buff);
+
     } else if ( (valueSR & (1 << 3) ) != 0 ) {
+
         func_OverrunError(ERROR_UART_LOG);
+
     }
     LOG_REG_COLOR(USART2->USART_SR);
 }
@@ -338,6 +183,141 @@ void configGpio()
     //GPIO_Pin_t gpioEvent = { GPIOC, GPIO_PIN_2 | GPIO_PIN_3 };
     //GPIO_Init(&gpioEvent , configEvent);
 }
+
+void BusFault_Handler(void) {
+
+}
+
+void HardFault_Handler(uint32_t *pStack)
+{
+    RTT_LOG_RED("------- HARD FAULT ------\n");
+
+    uint32_t stacked_r0  = pStack[0];
+    uint32_t stacked_r1  = pStack[1];
+    uint32_t stacked_r2  = pStack[2];
+    uint32_t stacked_r3  = pStack[3];
+    uint32_t stacked_r12 = pStack[4];
+    uint32_t stacked_lr  = pStack[5];   // LR cũ (thường là EXC_RETURN)
+    uint32_t stacked_pc  = pStack[6];   // ← Đây mới là PC gây lỗi
+    uint32_t stacked_psr = pStack[7];
+
+    RTT_printf("R0  = 0x%08X\n", stacked_r0);
+    RTT_printf("R1  = 0x%08X\n", stacked_r1);
+    RTT_printf("R2  = 0x%08X\n", stacked_r2);
+    RTT_printf("R3  = 0x%08X\n", stacked_r3);
+    RTT_printf("R12 = 0x%08X\n", stacked_r12);
+    RTT_printf("LR  = 0x%08X\n", stacked_lr);
+    RTT_printf("PC  = 0x%08X  ←←← LỆNH GÂY LỖI Ở ĐÂY\n", stacked_pc);
+    RTT_printf("PSR = 0x%08X\n", stacked_psr);
+
+    myPrintf("R0  = 0x%x\n", stacked_r0);
+    myPrintf("R1  = 0x%x\n\n", stacked_r1);
+    myPrintf("R2  = 0x%x\n\n", stacked_r2);
+    myPrintf("R3  = 0x%x\n", stacked_r3);
+    myPrintf("R12 = 0x%x\n", stacked_r12);
+    myPrintf("LR  = 0x%x\n", stacked_lr);
+    myPrintf("PC  = 0x%x  ←←← LỆNH GÂY LỖI Ở ĐÂY\n", stacked_pc);
+    myPrintf("PSR = 0x%x\n", stacked_psr);
+
+    // In thêm SP hiện tại (MSP hoặc PSP tùy mode)
+    RTT_printf("Stacked SP  = 0x%08X  (tức là địa chỉ pStack)\n", (uint32_t)pStack);
+
+    // In các thanh ghi fault
+    RTT_printf("HFSR = 0x%08X\n", SCB->HFSR);
+    RTT_printf("CFSR = 0x%08X\n", SCB->CFSR);
+    RTT_printf("BFAR = 0x%08X\n", SCB->BFAR);
+    RTT_printf("MMFAR= 0x%08X\n", SCB->MMFAR);
+
+    myPrintf("HFSR = 0x%x\n", SCB->HFSR);
+    myPrintf("CFSR = 0x%x\n", SCB->CFSR);
+    myPrintf("BFAR = 0x%x\n", SCB->BFAR);
+    myPrintf("MMFAR= 0x%x\n", SCB->MMFAR);
+    //TODO: implement lưu vào flash
+    
+    while(1) {};
+}
+
+void EXTI9_5_IRQHandler(void) {
+    LOG_REG_COLOR1(EXTI->PR);
+
+    EXTI->PR &= ~(1 << 5);
+    EXTI->PR &= ~(1 << 6);
+
+    LOG_REG_COLOR1(EXTI->PR);
+}
+
+void DWT_DataMaching(int value,volatile void* addrOfValue)
+{
+    *(volatile uint32_t *)0xE0000FB0 = 0xC5ACCE55; // DWT_LAR: Unlock DWT
+    *(volatile uint32_t *)0xE0001000 |= (1 << 0); // DWT_CTRL: CYCCNTENA
+
+
+    
+    *(volatile uint32_t *)0xE0001014 = (uint32_t)addrOfValue; // DWT_COMP1: Địa chỉ sensor_data
+    *(volatile uint32_t *)0xE0001018 = (value) | (0b10 << 0) | (1 << 2); // Data value match + EMITRANGE
+    *(volatile uint32_t *)0xE0000E00 |= (1 << 1); // Enable ITM port 1 for DWT
+    *(volatile uint32_t *)0xE0001024 |= (1 << 24); // Emit ITM event
+}
+
+void EXTI0_IRQHandler(void) {
+    //__asm volatile ("SVC #1"); //BUG: Không gọi SVC trong IRQ 
+    uint32_t reg_pr = EXTI->PR;
+    reg_pr &= ~(1 << 0);
+    EXTI->PR |= reg_pr;
+}
+
+__attribute((naked))
+uint32_t __get_MSP() {
+    __asm volatile("MOV R0, #0");
+    __asm volatile ("MRS R0, MSP");
+    __asm volatile ("BX LR");
+}
+
+//naked :loại bỏ các lời gọi hàm trước cho compiler chèn vào
+__attribute((naked)) 
+void SVC_Handler(void) {
+    uint32_t *sp = (uint32_t *)__get_MSP();  // Hoặc PSP nếu User mode
+    uint32_t pc = sp[6];                     // PC khi gọi SVC ~ pc = 0x80000c
+    //TODO:
+    // Trước khi nhảy vào handler pc lưu lệnh sau đó: Vì PC đang trỏ đến lệnh sau SVC
+    // → Lệnh SVC luôn có dạng: 2 bytes = 0xDF xx
+    // Byte thấp: chính là svc_number (từ 0 đến 255)
+    // SVC #3 → được assembler biên dịch thành: 0xDF 03
+    uint32_t aircr = SCB->AIRCR; // kiểm tra MSB hay LSB
+    uint8_t svc_number;
+
+    if (aircr & (1 << 15)) {
+        // Big-endian (hiếm gặp)
+        svc_number = ((uint8_t *)pc) [-1];
+    } else {
+        // Little-endian (luôn là trường hợp này trên STM32F4)
+        svc_number = ((uint8_t *)pc) [-2]; // Đọc byte cuối lệnh SVC (imm là byte 0)
+    }
+
+    
+    switch (svc_number & 0xFF) {             // Mask để lấy imm (0-255)
+        case 3:  // Xử lý cho SVC #3, ví dụ: custom function
+            // Gọi hàm tương ứng, ví dụ: my_custom_syscall();
+            break;
+        // Các case khác...
+    }
+}
+
+//void SVC_Handler(uint32_t* pStack) {
+//
+//
+//    uint32_t stacked_r0  = pStack[0];
+//    uint32_t stacked_r1  = pStack[1];
+//    uint32_t stacked_r2  = pStack[2];
+//    uint32_t stacked_r3  = pStack[3];
+//    uint32_t stacked_r12 = pStack[4];
+//    uint32_t stacked_lr  = pStack[5];   // LR cũ (thường là EXC_RETURN)
+//    uint32_t stacked_pc  = pStack[6];   // ← Đây mới là PC gây lỗi
+//    uint32_t stacked_psr = pStack[7];
+//
+//}
+
+
 
 
 
