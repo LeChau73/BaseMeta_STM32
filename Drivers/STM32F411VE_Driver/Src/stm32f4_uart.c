@@ -106,17 +106,23 @@ uart_status HAL_uart_Init(usart_config* config) {
             break;
         case MODE_RECEVICE:
             // Set RE bit -> receiver frame
-            SET_BIT_UART(USART2->USART_CR1, 13);
+            SET_BIT_UART(USART2->USART_CR1, 2);
             break;
         case ALL:
         LOG_REG_COLOR(USART2->USART_SR);
             // Set TE bit ->  send idle frame
             SET_BIT_UART(USART2->USART_CR1, 3);
             // Set RE bit -> receiver frame
-            SET_BIT_UART(USART2->USART_CR1, 13);
+            SET_BIT_UART(USART2->USART_CR1, 2);
             //NOTE: Sau khi set TE thì idle frame tran thì
             //BIT TXE = 1 & TC = 1
-
+            int count = 10000;
+            while((USART2->USART_CR1 & (0x01 << 3)) == 0 && count-- != 0) {
+                __asm volatile ("NOP");
+            }
+            if(count == 0) {
+                return ERROR_UART;
+            }
             LOG_REG_COLOR(USART2->USART_SR);
             break;
         default:
@@ -127,10 +133,13 @@ uart_status HAL_uart_Init(usart_config* config) {
     // Enable ISR for AURT
     //USART2->USART_CR1 |= config->configISR;
 
+    //Enable DMA reception
+    USART2->USART_CR3 |= config->enable_DMA << 6;
+
     LOG_REG_COLOR(USART2->USART_CR1);
     LOG_REG_COLOR(USART2->USART_SR);
     //TODO: các option khác
-
+    __asm volatile ("dsb 0xF":::"memory");
     return SUCCESS_UART;
 }
 
@@ -149,16 +158,27 @@ uart_status HAL_uart_tran1byte(uint8_t data) {
     // Nếu gửi nhiều byte((TXE == 0)) thì TC k thể set lên 1 được
     // Bởi vì write vào DR thì TXE sẽ được clear
 uart_status HAL_uart_tranMul(uint8_t buffer[], int size) {
-    if(READ_BIT_UART(USART2->USART_SR, 7) == 1) {
-        for(int i = 0; i < size; i++) {
-            USART2->USART_DR = buffer[i];
-            // Đợi TXE=1 ,DR empty
-            while(!READ_BIT_UART(USART2->USART_SR, 7));
+    if(buffer == NULL || size <= 0) return ERROR_UART;
+    
+    // Gửi từng byte
+    for(int i = 0; i < size; i++) {
+        // Đợi TXE=1 (DR trống)
+        uint16_t timeout = 10000;
+        while(!(READ_BIT_UART(USART2->USART_SR, 7)) && timeout--) {
+            __asm volatile("NOP");
         }
+        if(timeout == 0) return ERROR_UART;
+        
+        USART2->USART_DR = buffer[i];
     }
 
-    while(!(USART2->USART_SR && (0x01 << 6)));
+    // Đợi TC=1 (tất cả byte gửi xong) - SỬA SAI BITWISE
+    uint16_t timeout = 10000;
+    while(!(USART2->USART_SR & (0x01 << 6)) && timeout--) {  // ✅ & thay vì &&
+        __asm volatile("NOP");
+    }
     
+    return (timeout == 0) ? ERROR_UART : SUCCESS_UART;
 }
 
 /*  number_Frame : Số lượng frame break muốn gửi đi */
@@ -284,7 +304,6 @@ void call_callback_uart() {
 
 
 uart_status uart_tran_hander_it(void) {
-
     //RTT_printf("Send byte [%c]\n", );
      //BUG: lấy data chưa đúng
     USART2->USART_DR = ring_buffer_pop(&uart_core.cache_buffer);

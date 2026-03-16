@@ -11,16 +11,38 @@ void onCompleteUart(void) {
 
 int main(void) 
 {
-    //
-    func_receiverComplete = HAL_uart_receiver1byte;
-    func_transHandler = uart_tran_hander_it;
-    func_OverrunError = func_OverrunErrorHander;
-
-    register_callback_write_complete(onCompleteUart);   //Đắng ký hàm call back && init struct uart
-
+    
     SEGGER_RTT_Init();
     RTT_LOG_BRIGHT_RED("=====Hello RTT!=====\n");
 
+    configGpio();
+
+    //
+    func_receiverComplete = HAL_uart_receiver1byte;
+    func_transHandler = uart_tran_hander_it;
+    //func_OverrunError = func_OverrunErrorHander;
+
+    register_callback_write_complete(onCompleteUart);   //Đắng ký hàm call back && init struct uart
+
+    //DMA_UART_to_Mem();
+    usart_config config;
+    config.length = 8;
+    config.baudrate = 9600;
+    config.configISR = ENABLE_TRANS | ENABLE_RECIVER;
+    //config.configISR = DISNABLE_ALL;
+    config.config_mode = ALL;
+    char* buffer = "First";
+    
+    int status;
+
+    status = HAL_uart_Init(&config);
+
+
+
+
+    //USART2->USART_CR1 |= (0x1 << 5);
+    //uart_write_it("Hello", 5, 1);
+    status = HAL_uart_tranMul(buffer, 5);
     // Refer todo để check cây test
     //CreateTask("Task1", 4, 500, NULL, NULL);
 
@@ -29,31 +51,8 @@ int main(void)
     //myPrintf("I am using ITM print for debug\n");
     //ITM_SendString("Hello");
    
-    configGpio();
-
-    usart_config config;
-    config.length = 8;
-    config.baudrate = 9600;
-    config.configISR = ENABLE_TRANS | ENABLE_RECIVER;
-    //config.configISR = DISNABLE_ALL;
-    config.config_mode = ALL;
-    char* buffer = "First";
 
 
-    
-    int status;
-
-    status = HAL_uart_Init(&config);
-    uart_write_it("Hello", 5, 1);
-    //status = HAL_send_break_frame(1);
-    //status = HAL_uart_tran1byte('c');
-    status = HAL_uart_tranMul(buffer, 5);
-    
-
-
-
-    if(status == -1)
-        RTT_printf("Errorr\n");
 
     //BUG: Chi enable line 1
     //TRIGGER_INTERRUPT_EVENT(EXTI_LINE_0);
@@ -61,6 +60,11 @@ int main(void)
     LOG_REG_COLOR1(EXTI->PR);
     while (1) {
         //GPIO_Toogle( &(GPIO_Pin_t){GPIOD, GPIO_PIN_12 | GPIO_PIN_13 | GPIO_PIN_14 | GPIO_PIN_15} );
+        LOG_REG_COLOR1(USART2->USART_SR);
+        //while((USART2->USART_SR & (0x1 << 5)) == 0);
+
+        RTT_printf("Revice_data = %c\n", USART2->USART_DR);
+
 
         for (volatile int i = 0; i < 1000000; i++); // Delay giả lập
         led_on(12);

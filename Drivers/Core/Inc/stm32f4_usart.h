@@ -91,6 +91,7 @@ typedef struct
     uint8_t break_frame;        // option để send one break frame
     mode_config config_mode;    // mode reciver/tran
     config_interrupt configISR;
+    uint8_t             enable_DMA;     //DMAR bit in USART_CR3
 }usart_config;
 
 typedef enum {
