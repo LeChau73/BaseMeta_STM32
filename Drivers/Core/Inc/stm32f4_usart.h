@@ -1,7 +1,7 @@
 #ifndef UART_H
 #define UART_H
-#include "core_m4.h"
 #include "stm32f411xe.h"
+#include "core_cm4.h"
 #include <string.h>
 #define USART2_BASE  (PERIPH_BASE + 0x4400UL)
 

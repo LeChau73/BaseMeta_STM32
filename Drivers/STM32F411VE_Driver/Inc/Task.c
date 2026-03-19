@@ -1,7 +1,7 @@
 #ifndef __STM32F4xx_ITM_h
 #define __STM32F4xx_ITM_h
 
-#include "core_m4.h"
+#include "core_cm4.h"
 
 #ifdef __cplusplus
 extern "C"

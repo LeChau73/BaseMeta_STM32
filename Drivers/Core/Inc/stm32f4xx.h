@@ -88,6 +88,8 @@ extern "C" {
                                          |(__STM32F4xx_CMSIS_VERSION_SUB2 << 8 )\
                                          |(__STM32F4xx_CMSIS_VERSION_RC))
 
+#define STM32F411xE
+
 /**
   * @}
   */

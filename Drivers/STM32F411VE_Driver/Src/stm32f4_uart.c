@@ -15,12 +15,10 @@ uart_status HAL_uart_Init(usart_config* config) {
     USART2->USART_DR = 0;
     USART2->USART_SR &= ~(1 << 6);
 
-    LOG_REG_COLOR(USART2->USART_SR);
     uint8_t current_over;
     float USARTDIV;
     //For clock mà đi vào UART(APB1)
     uint32_t fCK = get_pclk1_frequency();
-    RTT_printf("Clock uart = %d", fCK);
     uint8_t over[2] = {8, 16};
 
    //* Enable USART (UE bit) 
@@ -36,8 +34,6 @@ uart_status HAL_uart_Init(usart_config* config) {
     // ----------- BAUD RATE----------------
     //* for baud rate */
     temp = USART2->USART_BRR;
-    // Clear
-    temp = CLEAR_REG(temp);
 
     //get bit over
     if((USART2->USART_CR1 >> 15) & 0x01) {
@@ -50,7 +46,6 @@ uart_status HAL_uart_Init(usart_config* config) {
     uint32_t result;
     //DEBUG FPU Lệnh Assembly đọc thanh ghi Floating-point Status and Control Register
     __asm volatile ("VMRS %0, fpscr" : "=r" (result));
-    RTT_printf("FPU enable = %d\n", result);
 
 
     /*
@@ -78,8 +73,6 @@ uart_status HAL_uart_Init(usart_config* config) {
     float fraction_float = USARTDIV - (float)Mantissa;
     uint16_t end_Fraction = (uint16_t)(fraction_float * 16.0f + 0.5f); // +0.5 để làm tròn (round) thay vì bị cắt cụt (truncate)
 
-    RTT_printf("Mantissa = %d, Fraction (Hex) = %d\n", Mantissa, end_Fraction);
-
     // Nạp vào thanh ghi: BRR = [Mantissa][Fraction]
     temp = (Mantissa << 4) | (end_Fraction & 0x0F);
     USART2->USART_BRR = temp;
@@ -95,7 +88,6 @@ uart_status HAL_uart_Init(usart_config* config) {
             SET_BIT_UART(USART2->USART_CR1, 12);
             break;
         default:
-            RTT_printf("ERROR : length cannot valid %d ", config->length);
             return ERROR_UART;
     }
 
@@ -109,7 +101,6 @@ uart_status HAL_uart_Init(usart_config* config) {
             SET_BIT_UART(USART2->USART_CR1, 2);
             break;
         case ALL:
-        LOG_REG_COLOR(USART2->USART_SR);
             // Set TE bit ->  send idle frame
             SET_BIT_UART(USART2->USART_CR1, 3);
             // Set RE bit -> receiver frame
@@ -123,10 +114,8 @@ uart_status HAL_uart_Init(usart_config* config) {
             if(count == 0) {
                 return ERROR_UART;
             }
-            LOG_REG_COLOR(USART2->USART_SR);
             break;
         default:
-            RTT_printf("Cannot choose mode recevice or send \n");
             return ERROR_UART;
     }
 
@@ -136,8 +125,6 @@ uart_status HAL_uart_Init(usart_config* config) {
     //Enable DMA reception
     USART2->USART_CR3 |= config->enable_DMA << 6;
 
-    LOG_REG_COLOR(USART2->USART_CR1);
-    LOG_REG_COLOR(USART2->USART_SR);
     //TODO: các option khác
     __asm volatile ("dsb 0xF":::"memory");
     return SUCCESS_UART;
@@ -191,7 +178,6 @@ uart_status HAL_send_break_frame(uint8_t number_Frame) {
         
         // Flush memory buffer to pheripheral
         __asm volatile ("dsb 0xF":::"memory");
-        LOG_REG(USART2->USART_CR1);
         while((USART2->USART_CR1 & 0x01) && timeout--) {
             __asm volatile ("NOP");
         }
@@ -268,7 +254,6 @@ ty_status_engine control_engine_ISR() {
     if(timeout == 0) {
         return BUSY;
     }
-    RTT_printf("status ring = %d\n", status_ring_buffer(&uart_core));
     // Get first byte
     if( status_ring_buffer(&uart_core) != EMPTY ) {
         USART2->USART_DR = ring_buffer_pop(&uart_core.cache_buffer);     // -> Triggle ISR
@@ -297,7 +282,6 @@ void call_callback_uart() {
     {
         uart_core.tranComplete_ptr();
     } else {
-        RTT_printf("Cannot register callback\n");
     }
 
 }
@@ -332,7 +316,6 @@ static char ring_buffer_pop(ring_buffer_uart* rb) {
         data = rb->buff[rb->tail]; // trả về dữ liệu hiện tại
         rb->tail = ( rb->tail + 1 ) % TX_BUF_SIZE;
     }
-    RTT_printf("Send data [%c] \n", data);
     return data;
 }
 

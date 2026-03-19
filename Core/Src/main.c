@@ -114,78 +114,32 @@ void USART2_IRQHandler(void) {
 }
 
 
-void configGpio()
+static void MX_GPIO_Init(void)
 {
+  GPIO_InitTypeDef GPIO_InitStruct = {0};
 
-    t_TCB debugTCB;
-    strcpy(debugTCB.task_name,"task1");
-    debugTCB.priority = 2;
-    debugTCB.status = READY;
-    int a = sizeof(debugTCB);
+  /* 1. Bật Clock cho các Port cần thiết */
+  __HAL_RCC_GPIOH_CLK_ENABLE();
+  __HAL_RCC_GPIOD_CLK_ENABLE();
+  __HAL_RCC_GPIOA_CLK_ENABLE(); // Quan trọng: Phải bật clock cho GPIOA
 
+  /* 2. Cấu hình LED trên PD15 (Code cũ của bạn) */
+  HAL_GPIO_WritePin(GPIOD, GPIO_PIN_15, GPIO_PIN_RESET);
+  GPIO_InitStruct.Pin = GPIO_PIN_15;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);
 
+  /* 3. Cấu hình UART2 trên PA2 (TX) và PA3 (RX) */
+  GPIO_InitStruct.Pin = GPIO_PIN_2 | GPIO_PIN_3;
+  GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;      // Chế độ Alternate Function
+  GPIO_InitStruct.Pull = GPIO_PULLUP;         // Thường dùng Pull-up cho UART để tránh nhiễu khi rảnh
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
+  GPIO_InitStruct.Alternate = GPIO_AF7_USART2; // Kết nối chân vật lý với bộ UART2
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
-
-
-    //Enable clock
-    volatile uint32_t* rcc_gpio = (volatile uint32_t*)RCC_AHB1ENR;
-    *rcc_gpio |= RCC_GPIODEN;
-
-    __HAL_RCC_GPIOH_CLK_ENABLE();
-    __HAL_RCC_GPIOD_CLK_ENABLE();
-    __HAL_RCC_GPIOC_CLK_ENABLE();
-    __HAL_RCC_GPIOB_CLK_ENABLE();
-    __HAL_RCC_GPIOA_CLK_ENABLE();
-
-    GPIO_Pin_t gpio = { GPIOD , GPIO_PIN_12 | GPIO_PIN_13 | GPIO_PIN_14 | GPIO_PIN_15};
-    gpio.port->OSPEEDR = (uint32_t)0x0000C000; //Case 1: không ảnh hưởng cũ
-
-
-    GPIO_Config config = { OUTPUT_PP, 0, MEDIUM_SPEED, 0};
-    GPIO_Init(&gpio , &config);
-
-    // Test AF : Config UART 2 : PA2(TX) PA3(RX) AF7
-    // DEBUG: đang debug
-    GPIO_Config configAF;
-    configAF.alternate = AF7; //UART 2
-    configAF.mode = MODE_AF;
-    configAF.pull = GPIO_NOPULL;
-    configAF.speed = HIGH_SPEED;
-    GPIO_Pin_t gpioAF = { GPIOA, GPIO_PIN_2 | GPIO_PIN_3 };
-    GPIO_Init(&gpioAF , &configAF);
-    RTT_printf("Expected uart2 GPIO2 : ");
-    LOG_REG_COLOR(GPIOA->AFRL);
-    LOG_REG_COLOR(GPIOA->MODER);
-    NVIC_EnableIRQ(USART2_IRQn);
-    //EXPEC: GPIOA->AFR[0] = 0x00007700;
-
-    //Testcase for exti
-    //TODO
-    GPIO_Config configEXTI;
-    configEXTI.mode = GPIO_MODE_IT_RISING;      
-    //configEXTI.mode = PULL_DOWN;                   //HACK: mode EXTI phải cấu hình input cho nó
-    GPIO_Pin_t gpioEXTI = { GPIOA, GPIO_PIN_0 | GPIO_PIN_6 };
-    GPIO_Init(&gpioEXTI , &configEXTI);
-
-    //BUG: Pending đã enable,nhưng k thể interrupt
-    //@day : 12/11
-    NVIC_EnableIRQ(EXTI0_IRQn);
-    //LOG_REG_COLOR1(GPIOA);
-    //LOG_REG_COLOR1(&gpioEXTI.port->PUPDR);
-    //LOG_REG_COLOR1(gpioEXTI.port->MODER);
-    //LOG_REG_COLOR1(gpioEXTI.port->PUPDR);
-    //LOG_REG_COLOR1(gpioEXTI.port->AFRL);
-    //LOG_REG_COLOR1(gpioEXTI.port->AFRH);
-
-    
-    //Expected :
-        //nhảy vào hander tương ứng
-
-    //Testcase for event external interrupt
-    GPIO_Config* configEvent;
-    configEvent->mode = GPIO_MODE_EVT_RISING;                           //HACK: mode EXTI phải cấu hình input cho nó
-    //GPIO_Pin_t gpioEvent = { GPIOC, GPIO_PIN_2 | GPIO_PIN_3 };
-    //GPIO_Init(&gpioEvent , configEvent);
+  
 }
 
 void BusFault_Handler(void) {
@@ -270,12 +224,8 @@ void EXTI0_IRQHandler(void) {
     EXTI->PR |= reg_pr;
 }
 
-__attribute((naked))
-uint32_t __get_MSP() {
-    __asm volatile("MOV R0, #0");
-    __asm volatile ("MRS R0, MSP");
-    __asm volatile ("BX LR");
-}
+// __get_MSP() is provided by CMSIS headers in core_cm4.h
+// Use the CMSIS version directly
 
 //naked :loại bỏ các lời gọi hàm trước cho compiler chèn vào
 __attribute((naked)) 
@@ -320,10 +270,6 @@ void SVC_Handler(void) {
 //    uint32_t stacked_psr = pStack[7];
 //
 //}
-
-
-
-
 
 inline void ConfigClockHSE16MHZ()
 {

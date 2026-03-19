@@ -71,7 +71,7 @@ void GPIO_Init(GPIO_Pin_t* gpiox, GPIO_Config* gpio_config)
                 // 0 - 7
                 // 1111 : 0 -> 7 thì bit 4 luôn bằng 0, 8 -> 15 thì bit 4 sẽ bằng 1
 
-                uint32_t* ptr = &gpiox->port->AFRL;
+                uint32_t* ptr = &gpiox->port->AFR[0];
                 ptr  +=   ( pin_num >> 3) & 0x01;                                                   //xác định xem AFR L | H
                 *ptr &=  ~( ( uint32_t ) ( 0x0F << ( pin_num % 8 ) * 4 ) );                          //clear old
                 *ptr |=   ( uint32_t ) ( gpio_config->alternate  << ( pin_num % 8 ) * 4 ) ;          //Setting  [ pin_num % 8 ] vì thanh ghi đó chỉ setting 0 -> 8
@@ -85,8 +85,6 @@ void GPIO_Init(GPIO_Pin_t* gpiox, GPIO_Config* gpio_config)
                     //2 mode: setting thanh ghi tương ứng
                 if ( ( gpio_config->mode & EXTI_MODE ) != 0 )
                 {
-                    
-                    
                     __HAL_RCC_SYSCFG_CLK_ENABLE();//enable clock for SYSCFG
                     // Read
                     temp = SYSCFG->EXTICR[ pin_num >> 2 ]; //dịch 2 chia cho 2^2

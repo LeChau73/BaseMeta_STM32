@@ -4,21 +4,23 @@
 #include "stdlib.h"
 #include <stdint.h>
 #include <stdbool.h>
+#include "stm32f411xe.h"
 #include "stm32f4xx_itm.h"
-#include "stm32f4xx_gpio.h"
-#include "core_m4.h"
+#include "core_cm4.h"
 #include "../Src/semi_io.c"
 #include "log.h"
 #include "debugFunc.h"
 #include "SEGGER_RTT.h"
 #include "stm32f4xx_hal_rcc.h"
-#include "stm32f411xe.h"
 #include "stm32f4xx.h"
 #include "BST.h"
 #include "myRTOS.h"
 #include "stm32f4_usart.h"
 #include "stm32f4_dma.h"
 #include "app_dma.h"
+#include "stm32f4xx_hal_gpio_ex.h"
+#include "stm32f4xx_hal_gpio.h"
+
 // Configuage clock
 #define RCC_CR              (*(volatile uint32_t*)0x40023800)
 #define RCC_PLLCFGR         (*(volatile uint32_t*)0x40023804)
@@ -90,14 +92,7 @@ void EXTI9_5_IRQHandler(void);
 void SVC_Handler(void);
 void EXTI0_IRQHandler(void);
 void configGpio();
-// Set the priority grouping
-void NVIC_SetPriorityGrouping(uint32_t priority_grouping) {
-
-}
-
-void NVIC_SetSubPriority(uint32_t priority_grouping) {
-    
-}
+// NVIC priority grouping is handled by core_cm4.h through NVIC_SetPriorityGrouping macro
 
 //Testting
 void NVIC_ConfigPriority(BinaryPoint config) {

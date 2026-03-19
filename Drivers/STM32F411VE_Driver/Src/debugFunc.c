@@ -1,6 +1,6 @@
 #include "debugFunc.h"
 #include "log.h"
-#include "core_m4.h"
+#include "core_cm4.h"
 
 void initTimer() 
 {

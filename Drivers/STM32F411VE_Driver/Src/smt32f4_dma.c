@@ -83,8 +83,7 @@ bool DMA_Init(DMA_configuration_Ty* Dma_config, DMA_Stream_TypeDef* dma_stream) 
     dma_stream->CR |= 0x01;
 
 
-    LOG_REG(dma_stream->CR);
-    LOG_REG(dma_stream->NDTR);
+    
 
     return 1;
 }

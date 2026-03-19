@@ -3,9 +3,10 @@
 #ifndef __STM32F4xx_ITM_H
 #define __STM32F4xx_ITM_H
 
-#include "core_m4.h"
+#include <stdint.h>
 #include <stdbool.h>
-
+#include "stm32f411xe.h"
+#include "core_cm4.h"
 
 
 

@@ -6,6 +6,7 @@ extern "C" {
 #endif
 
 
+#include "stm32f411xe.h"
 #include "stm32f4xx_itm.h"
 #include <stdint.h>
 #include <stdio.h>

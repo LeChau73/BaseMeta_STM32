@@ -8,13 +8,15 @@ extern "C"
 #endif
 
 
-#include "core_m4.h"
 #include "stm32f411xe.h"
+#include "core_cm4.h"
 #include "stm32f4xx_hal_rcc.h"
 
 
 
-/* structure for register */
+/* structure for register - conditionally define if not already defined in device header */
+/*
+#ifndef GPIO_TypeDef
 typedef struct
 {
     __IO uint32_t MODER;    // 0x00
@@ -28,8 +30,8 @@ typedef struct
     __IO uint32_t AFRL;     // 0x20
     __IO uint32_t AFRH;     // 0x24
 } GPIO_TypeDef;
-
-
+#endif
+*/
 /* structor for configuration */
 typedef struct
 {
