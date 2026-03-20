@@ -5,8 +5,8 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include "stm32f411xe.h"
+#include "stm32f4xx_hal.h"
 #include "stm32f4xx_itm.h"
-#include "core_cm4.h"
 #include "../Src/semi_io.c"
 #include "log.h"
 #include "debugFunc.h"
@@ -15,11 +15,8 @@
 #include "stm32f4xx.h"
 #include "BST.h"
 #include "myRTOS.h"
-#include "stm32f4_usart.h"
-#include "stm32f4_dma.h"
-#include "app_dma.h"
-#include "stm32f4xx_hal_gpio_ex.h"
 #include "stm32f4xx_hal_gpio.h"
+#include "stm32f4xx_hal_dma.h"
 
 // Configuage clock
 #define RCC_CR              (*(volatile uint32_t*)0x40023800)
@@ -70,21 +67,6 @@ int global2; // Global variable located in RAM(section .bss)
 
 inline uint32_t  __get_MSP();
 inline void ConfigClockHSE16MHZ();
-extern uart_feature uart_core;
-
-// Callback for Error handler
-void (*func_OverrunError)(uart_log_level log_level) = NULL;
-
-// Callback for complete receiver
-uart_status (*func_receiverComplete)(char *buff)= NULL;
-
-// Callback for Trans handler
-uart_status (*func_transHandler)(void) = NULL;
-
-extern void initialize_monitor_handles(void);
-extern int test_extern;
-void register_callback_write_complete(uart_callback_t callback);
-
 
 void USART2_IRQHandler(void);
 void HardFault_Handler(uint32_t *pStack);
@@ -94,32 +76,13 @@ void EXTI0_IRQHandler(void);
 void configGpio();
 // NVIC priority grouping is handled by core_cm4.h through NVIC_SetPriorityGrouping macro
 
-//Testting
-void NVIC_ConfigPriority(BinaryPoint config) {
-    uint32_t temp = SCB->AIRCR;
-    // unlock key
-    temp |= (0x5FA << 16);
-    // write
-    SCB->AIRCR = temp;
-
-    // Read
-    if ( ((temp >> 8) & 0x07) & config ) {
-        //the same confg
-        return;
-    } else {
-        SCB->AIRCR |= config;
-    }
-    
-}
-
-inline void Reset_MCU() {
-    uint32_t temp = SCB->AIRCR;
-    // unlock key
-    temp |= (0x5FA << 16);
-    // write
-    SCB->AIRCR = temp;
-
-    SCB->AIRCR |= 0x1 << 2;
-}
+void Error_Handler(void);
+void SystemClock_Config(void);
+static void MX_GPIO_Init(void);
+static void MX_DMA_Init(void);
+static void MX_USART2_UART_Init(void);
+static void Start_UART_DMA_Receive(void);
+extern HAL_StatusTypeDef HAL_UART_Receive_DMA(UART_HandleTypeDef *huart, uint8_t *pData, uint16_t Size);
+void dma_handler_callback( struct __UART_HandleTypeDef * hdma);
 
 #endif

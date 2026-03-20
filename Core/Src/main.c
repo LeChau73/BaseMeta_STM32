@@ -1,69 +1,24 @@
 #include "main.h"
 #include <stdarg.h>
 
+UART_HandleTypeDef huart2;
+DMA_HandleTypeDef hdma_usart2_rx;
 
-void onCompleteUart(void);
-
-void onCompleteUart(void) {
-    RTT_printf("Done write uart\n");
-    //USART2->USART_CR1 &= ~(0x1 << 6); // TCIE = 1 bit 6 CR1 -> DISNABLE ISR
-}
 
 int main(void) 
 {
-    
+    HAL_Init();
+    SystemClock_Config();
+
+    MX_GPIO_Init();
+    MX_USART2_UART_Init();
+
+    MX_DMA_Init();
+
     SEGGER_RTT_Init();
     RTT_LOG_BRIGHT_RED("=====Hello RTT!=====\n");
 
-    configGpio();
-
-    //
-    func_receiverComplete = HAL_uart_receiver1byte;
-    func_transHandler = uart_tran_hander_it;
-    //func_OverrunError = func_OverrunErrorHander;
-
-    register_callback_write_complete(onCompleteUart);   //Đắng ký hàm call back && init struct uart
-
-    //DMA_UART_to_Mem();
-    usart_config config;
-    config.length = 8;
-    config.baudrate = 9600;
-    config.configISR = ENABLE_TRANS | ENABLE_RECIVER;
-    //config.configISR = DISNABLE_ALL;
-    config.config_mode = ALL;
-    char* buffer = "First";
-    
-    int status;
-
-    status = HAL_uart_Init(&config);
-
-
-
-
-    //USART2->USART_CR1 |= (0x1 << 5);
-    //uart_write_it("Hello", 5, 1);
-    status = HAL_uart_tranMul(buffer, 5);
-    // Refer todo để check cây test
-    //CreateTask("Task1", 4, 500, NULL, NULL);
-
-    // __asm volatile ("SVC #3"); //BUG: Không gọi SVC trong IRQ
-    //ITM_Init(false);
-    //myPrintf("I am using ITM print for debug\n");
-    //ITM_SendString("Hello");
-   
-
-
-
-    //BUG: Chi enable line 1
-    //TRIGGER_INTERRUPT_EVENT(EXTI_LINE_0);
-    LOG_REG_COLOR1(EXTI->SWIER);
-    LOG_REG_COLOR1(EXTI->PR);
     while (1) {
-        //GPIO_Toogle( &(GPIO_Pin_t){GPIOD, GPIO_PIN_12 | GPIO_PIN_13 | GPIO_PIN_14 | GPIO_PIN_15} );
-        LOG_REG_COLOR1(USART2->USART_SR);
-        //while((USART2->USART_SR & (0x1 << 5)) == 0);
-
-        RTT_printf("Revice_data = %c\n", USART2->USART_DR);
 
 
         for (volatile int i = 0; i < 1000000; i++); // Delay giả lập
@@ -75,45 +30,51 @@ int main(void)
 
     return 0;
 }
+void SystemClock_Config(void)
+{
+  RCC_OscInitTypeDef RCC_OscInitStruct = {0};
+  RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
 
-char buff[20];
-char nextData = 'c';
+  /** Cấu hình điện áp đầu ra bộ điều chỉnh nội bộ */
+  __HAL_RCC_PWR_CLK_ENABLE();
+  __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE1);
 
-// Handler UART2
-void USART2_IRQHandler(void) {
-    //Parse bit in register SR to noticed
-    volatile uint32_t valueSR = USART2->USART_SR;
-    LOG_REG_COLOR(USART2->USART_CR1);
-    RTT_printf("CR: 0x%X\n", (1 << 6));
-    uart_status status;
-    uart_log_level level_log;
-    RTT_printf("Mask: 0x%X\n", (1 << 6));
-    RTT_printf("SR: 0x%X\n", valueSR);
-    RTT_printf("Result: 0x%X\n", valueSR & (1 << 6));
-    if  ( ( valueSR & (1 << 6) ) != 0 ) { // Kiểm tra cờ TC (Transmission Complete)
+  /** 1. Cấu hình HSI và PLL */
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI;
+  RCC_OscInitStruct.HSIState = RCC_HSI_ON;
+  RCC_OscInitStruct.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;
+  RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
+  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSI; // Nguồn là HSI (16MHz)
+  RCC_OscInitStruct.PLL.PLLM = 8;                      // 16MHz / 8 = 2MHz
+  RCC_OscInitStruct.PLL.PLLN = 100;                    // 2MHz * 100 = 200MHz
+  RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV4;          // 200MHz / 4 = 50MHz (SYSCLK)
+  RCC_OscInitStruct.PLL.PLLQ = 4;                      // 200MHz / 4 = 50MHz (Cho USB/SDIO)
+  
+  if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
+  {
+    Error_Handler();
+  }
 
-        //Trans comple
+  /** 2. Cấu hình các bus (HCLK, PCLK1, PCLK2) */
+  RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
+                              |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
+  RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK; // Chạy bằng PLL
+  RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;        // HCLK = 50MHz
+  RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV2;         // PCLK1 = 25MHz (Dành cho UART2)
+  RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;         // PCLK2 = 50MHz
 
-        status = func_transHandler();
-        //Clear TXE
-        if(status_ring_buffer(&uart_core) == EMPTY) {
-            call_callback_uart();
-            USART2->USART_CR1 &= ~(0x1 << 6); // TCIE = 1 bit 6 CR1 -> Clear Tiggle ISR
-        }
-
-    } else if ( (valueSR & (1 << 5) ) != 0  ) {
-
-        status = func_receiverComplete(buff);
-
-    } else if ( (valueSR & (1 << 3) ) != 0 ) {
-
-        func_OverrunError(ERROR_UART_LOG);
-
-    }
-    LOG_REG_COLOR(USART2->USART_SR);
+  /* QUAN TRỌNG: Với 50MHz, FLASH_LATENCY phải là 1 Wait State */
+  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_1) != HAL_OK)
+  {
+    Error_Handler();
+  }
 }
 
-
+/**
+  * @brief GPIO Initialization Function
+  * @param None
+  * @retval None
+  */
 static void MX_GPIO_Init(void)
 {
   GPIO_InitTypeDef GPIO_InitStruct = {0};
@@ -142,9 +103,120 @@ static void MX_GPIO_Init(void)
   
 }
 
-void BusFault_Handler(void) {
+
+
+
+void MX_USART2_UART_Init(void)
+{
+  huart2.Instance = USART2;
+  huart2.Init.BaudRate = 9600;
+  huart2.Init.WordLength = UART_WORDLENGTH_8B;
+  huart2.Init.StopBits = UART_STOPBITS_1;
+  huart2.Init.Parity = UART_PARITY_NONE;
+  huart2.Init.Mode = UART_MODE_TX_RX;      // Bật cả truyền và nhận
+  huart2.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+  huart2.Init.OverSampling = UART_OVERSAMPLING_16;
+  //huart2.RxCpltCallback = dma_handler_callback;
+  
+  if (HAL_UART_Init(&huart2) != HAL_OK)
+  {
+    Error_Handler();
+  }
+}
+
+
+
+void Start_UART_DMA_Receive(void)
+{
+  /* Lệnh này thực hiện 3 việc:
+     1. Gán địa chỉ đích (rx_buffer) vào thanh ghi CMAR của DMA.
+     2. Ghi số lượng (RX_BUF_SIZE) vào thanh ghi CNDTR.
+     3. Bật bit DMAR trong UART2 để "mở cổng" đẩy data sang DMA.
+  */
+  //HAL_UART_Receive_DMA(&huart2, rx_buffer, RX_BUF_SIZE);
+}
+
+static void MX_DMA_Init(void) 
+{
+  /* 1. Khai báo biến Handle cho DMA */
+
+  /* 2. Bật Clock cho bộ điều khiển DMA */
+  __HAL_RCC_DMA1_CLK_ENABLE();
+
+  /* 3. Cấu hình các tham số cho DMA */
+  hdma_usart2_rx.Instance = DMA1_Stream5;            // Ví dụ Stream cho UART2 RX trên dòng F4
+  hdma_usart2_rx.Init.Channel = DMA_CHANNEL_4;        // Channel tương ứng với UART2
+  
+
+  // Hướng truyền: Từ Ngoại vi đến Bộ nhớ (Peripheral to Memory)
+  hdma_usart2_rx.Init.Direction = DMA_PERIPH_TO_MEMORY; 
+  
+  // Không tự động tăng địa chỉ ngoại vi (vì thanh ghi DR của UART là cố định)
+  hdma_usart2_rx.Init.PeriphInc = DMA_PINC_DISABLE;   
+  
+  // Tự động tăng địa chỉ bộ nhớ (để lưu dữ liệu vào mảng/buffer)
+  hdma_usart2_rx.Init.MemInc = DMA_MINC_ENABLE;       
+  
+  // Định dạng dữ liệu: 8-bit (Byte)
+  hdma_usart2_rx.Init.PeriphDataAlignment = DMA_PDATAALIGN_BYTE;
+  hdma_usart2_rx.Init.MemDataAlignment = DMA_MDATAALIGN_BYTE; 
+  
+  // Chế độ: DMA_MODE_NORMAL (dừng khi đủ) hoặc DMA_MODE_CIRCULAR (vòng lặp liên tục)
+  hdma_usart2_rx.Init.Mode = DMA_CIRCULAR;       
+  
+  // Ưu tiên: Thấp/Trung bình/Cao
+  hdma_usart2_rx.Init.Priority = DMA_PRIORITY_LOW;    
+  
+  // Chế độ FIFO (thường tắt để tiết kiệm năng lượng cho các tác vụ đơn giản)
+  hdma_usart2_rx.Init.FIFOMode = DMA_FIFOMODE_DISABLE;
+
+
+  HAL_NVIC_SetPriority(DMA1_Stream5_IRQn, 0, 0); 
+  HAL_NVIC_EnableIRQ(DMA1_Stream5_IRQn);
+
+  /* 4. Gọi hàm Init để áp dụng cấu hình */
+  if (HAL_DMA_Init(&hdma_usart2_rx) != HAL_OK)
+  {
+    // Xử lý lỗi nếu khởi tạo thất bại
+    Error_Handler();
+  }
 
 }
+
+/* USER CODE END 4 */
+
+/**
+  * @brief  This function is executed in case of error occurrence.
+  * @retval None
+  */
+void Error_Handler(void)
+{
+  /* USER CODE BEGIN Error_Handler_Debug */
+  /* User can add his own implementation to report the HAL error return state */
+  __disable_irq();
+  while (1)
+  {
+  }
+  /* USER CODE END Error_Handler_Debug */
+}
+
+#ifdef  USE_FULL_ASSERT
+/**
+  * @brief  Reports the name of the source file and the source line number
+  *         where the assert_param error has occurred.
+  * @param  file: pointer to the source file name
+  * @param  line: assert_param error line source number
+  * @retval None
+  */
+void assert_failed(uint8_t *file, uint32_t line)
+{
+  /* USER CODE BEGIN 6 */
+  /* User can add his own implementation to report the file name and line number,
+     ex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
+  /* USER CODE END 6 */
+}
+#endif /* USE_FULL_ASSERT */
+
 
 void HardFault_Handler(uint32_t *pStack)
 {
