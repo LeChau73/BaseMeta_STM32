@@ -59,12 +59,6 @@ typedef enum {
     ground_0_and_sub_16 = 0b100 << 8,   // Group None  , Sub [7:4]
 } BinaryPoint;
 
-
-
-
-int global1 = 5; // Global variable located in RAM(section .data)
-int global2; // Global variable located in RAM(section .bss)
-
 inline uint32_t  __get_MSP();
 inline void ConfigClockHSE16MHZ();
 
@@ -84,5 +78,12 @@ static void MX_USART2_UART_Init(void);
 static void Start_UART_DMA_Receive(void);
 extern HAL_StatusTypeDef HAL_UART_Receive_DMA(UART_HandleTypeDef *huart, uint8_t *pData, uint16_t Size);
 void dma_handler_callback( struct __UART_HandleTypeDef * hdma);
+
+extern void dma_mem_copy(char* source, char* destination, size_t lenght);
+extern void DMA_Config_Mem_to_Mem(void);
+extern char compare(char* source, char* destination, size_t lenght);
+extern void Init_Data_Source(char* f_source,size_t size);
+
+void SysTick_Handler(void) ;
 
 #endif

@@ -175,6 +175,13 @@ HAL_StatusTypeDef HAL_Init(void)
   /* Use systick as time base source and configure 1ms tick (default clock after Reset is HSI) */
   HAL_InitTick(TICK_INT_PRIORITY);
 
+  if (HAL_SYSTICK_Config(SystemCoreClock / (10000U )) > 0U)
+  {
+    return HAL_ERROR;
+  }
+
+  //NVIC_EnableIRQ(SysTick_IRQn);
+
   /* Init the low level hardware */
   HAL_MspInit();
 

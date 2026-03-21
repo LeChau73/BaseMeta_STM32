@@ -13,6 +13,7 @@ BUILD_TIME := $(shell date +%Y%m%d__%H%M%S)
 # Thư mục dự án
 SRC_DIR = \
 	Core/Src \
+	Core/Src/DMA \
 	D:/STM32_WORKSPACE/STM32F411_Myproject/Drivers/STM32F411VE_Driver/Src/stm32f4xx_hal_cortex.c \
 	D:/STM32_WORKSPACE/STM32F411_Myproject/Drivers/STM32F411VE_Driver/Src/stm32f4xx_hal.c \
 	Drivers/STM32F411VE_Driver/Src \
