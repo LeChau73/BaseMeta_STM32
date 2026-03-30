@@ -167,7 +167,7 @@ static HAL_StatusTypeDef DMA_CheckFifoParam(DMA_HandleTypeDef *hdma);
   *               the configuration information for the specified DMA Stream.  
   * @retval HAL status
   */
-HAL_StatusTypeDef HAL_DMA_Init(DMA_HandleTypeDef *hdma)
+HAL_StatusTypeDef  HAL_DMA_Init(DMA_HandleTypeDef *hdma)
 {
   uint32_t tmp = 0U;
   uint32_t tickstart = HAL_GetTick();
@@ -459,12 +459,12 @@ HAL_StatusTypeDef HAL_DMA_Start_IT(DMA_HandleTypeDef *hdma, uint32_t SrcAddress,
   assert_param(IS_DMA_BUFFER_SIZE(DataLength));
  
   /* Process locked */
-  __HAL_LOCK(hdma);
+  //__HAL_LOCK(hdma);
   
   if(HAL_DMA_STATE_READY == hdma->State)
   {
     /* Change DMA peripheral state */
-    hdma->State = HAL_DMA_STATE_BUSY;
+    //hdma->State = HAL_DMA_STATE_BUSY;
     
     /* Initialize the error code */
     hdma->ErrorCode = HAL_DMA_ERROR_NONE;
@@ -747,7 +747,7 @@ void HAL_DMA_IRQHandler(DMA_HandleTypeDef *hdma)
 {
   uint32_t tmpisr;
   __IO uint32_t count = 0U;
-  uint32_t timeout = SystemCoreClock / 9600U;
+  uint32_t timeout = SystemCoreClock / 9600U; //Số lần mà retry
 
   /* calculate DMA base and stream number */
   DMA_Base_Registers *regs = (DMA_Base_Registers *)hdma->StreamBaseAddress;
@@ -757,7 +757,7 @@ void HAL_DMA_IRQHandler(DMA_HandleTypeDef *hdma)
   /* Transfer Error Interrupt management ***************************************/
   if ((tmpisr & (DMA_FLAG_TEIF0_4 << hdma->StreamIndex)) != RESET)
   {
-    if(__HAL_DMA_GET_IT_SOURCE(hdma, DMA_IT_TE) != RESET)
+    if(__HAL_DMA_GET_IT_SOURCE(hdma, DMA_IT_TE) != RESET) //Check xem bit error tranfer enable k?
     {
       /* Disable the transfer error interrupt */
       hdma->Instance->CR  &= ~(DMA_IT_TE);
@@ -1148,7 +1148,7 @@ uint32_t HAL_DMA_GetError(DMA_HandleTypeDef *hdma)
   * @param  DataLength The length of data to be transferred from source to destination
   * @retval HAL status
   */
-static void DMA_SetConfig(DMA_HandleTypeDef *hdma, uint32_t SrcAddress, uint32_t DstAddress, uint32_t DataLength)
+static void  DMA_SetConfig(DMA_HandleTypeDef *hdma, uint32_t SrcAddress, uint32_t DstAddress, uint32_t DataLength)
 {
   /* Clear DBM bit */
   hdma->Instance->CR &= (uint32_t)(~DMA_SxCR_DBM);

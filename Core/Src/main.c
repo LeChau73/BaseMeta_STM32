@@ -2,7 +2,7 @@
 #include <stdarg.h>
 
 UART_HandleTypeDef huart2;
-DMA_HandleTypeDef hdma_usart2_rx;
+DMA_HandleTypeDef hdma_usart2_tx;
 
 #define MAX_BUFFER 1024
 
@@ -17,23 +17,43 @@ void DWT_Init(void)
     DWT->CTRL |= DWT_CTRL_CYCCNTENA_Msk;
 }
 
+
+void DMA1_Stream5_IRQHandler() {
+
+    // Phân biệt đang là lỗi nào
+    if ( HAL_DMA_GetError)
+    {
+      /* code */
+    }
+    
+
+
+    HAL_DMA_IRQHandler(&hdma_usart2_tx);
+    LOG_Message("Hiiii DMA ISR Stream 0");
+}
+
 int main(void) 
 {
   /* For log */
-    ITM_Init(false);
-    SEGGER_RTT_Init();
-    RTT_printf("=====Hello RTT!=====\n");
-
-  /* end */
-
-
-
+    //ITM_Init(false);
     HAL_Init();
     SystemClock_Config();
     MX_GPIO_Init();
+    SEGGER_RTT_Init();
+    RTT_printf("=====Hello RTT!=====\n");     //Không dùng được do dump thanh ghi của SVD
+    MX_DMA_Init();
     MX_USART2_UART_Init();
+    LOG_Message("------------ Init log UART --------------\n");
 
-    //MX_DMA_Init();
+    char test[] = "Dummy DMA";
+    HAL_UART_Transmit_DMA(&huart2, test, 8);
+
+    //Chỗ này sau khi DMA chưa gửi dữ liệu qua cho UART được
+    uint32_t *regs = (uint32_t *)hdma_usart2_tx.StreamBaseAddress;
+    LOG_Message("Value of %x\n", *regs);
+    myPrintf("Hello\n");
+  /* end */
+
     DWT_Init();
     DMA_Config_Mem_to_Mem();
 
@@ -133,10 +153,9 @@ static void MX_GPIO_Init(void)
 }
 
 
-
-
 void MX_USART2_UART_Init(void)
 {
+  __HAL_RCC_USART2_CLK_ENABLE();
   huart2.Instance = USART2;
   huart2.Init.BaudRate = 9600;
   huart2.Init.WordLength = UART_WORDLENGTH_8B;
@@ -145,6 +164,8 @@ void MX_USART2_UART_Init(void)
   huart2.Init.Mode = UART_MODE_TX_RX;      // Bật cả truyền và nhận
   huart2.Init.HwFlowCtl = UART_HWCONTROL_NONE;
   huart2.Init.OverSampling = UART_OVERSAMPLING_16;
+  huart2.hdmatx = &hdma_usart2_tx;
+  huart2.gState = HAL_UART_STATE_READY;
   //huart2.RxCpltCallback = dma_handler_callback;
   
   if (HAL_UART_Init(&huart2) != HAL_OK)
@@ -152,7 +173,6 @@ void MX_USART2_UART_Init(void)
     Error_Handler();
   }
 }
-
 
 
 void Start_UART_DMA_Receive(void)
@@ -173,38 +193,40 @@ static void MX_DMA_Init(void)
   __HAL_RCC_DMA1_CLK_ENABLE();
 
   /* 3. Cấu hình các tham số cho DMA */
-  hdma_usart2_rx.Instance = DMA1_Stream5;            // Ví dụ Stream cho UART2 RX trên dòng F4
-  hdma_usart2_rx.Init.Channel = DMA_CHANNEL_4;        // Channel tương ứng với UART2
+  hdma_usart2_tx.Instance = DMA1_Stream6;            // Ví dụ Stream cho UART2 RX trên dòng F4
+  hdma_usart2_tx.Init.Channel = DMA_CHANNEL_4;        // Channel tương ứng với UART2
   
 
   // Hướng truyền: Từ Ngoại vi đến Bộ nhớ (Peripheral to Memory)
-  hdma_usart2_rx.Init.Direction = DMA_PERIPH_TO_MEMORY; 
+  hdma_usart2_tx.Init.Direction = DMA_MEMORY_TO_PERIPH; 
   
   // Không tự động tăng địa chỉ ngoại vi (vì thanh ghi DR của UART là cố định)
-  hdma_usart2_rx.Init.PeriphInc = DMA_PINC_DISABLE;   
+  hdma_usart2_tx.Init.PeriphInc = DMA_PINC_DISABLE;   
   
   // Tự động tăng địa chỉ bộ nhớ (để lưu dữ liệu vào mảng/buffer)
-  hdma_usart2_rx.Init.MemInc = DMA_MINC_ENABLE;       
+  hdma_usart2_tx.Init.MemInc = DMA_MINC_ENABLE;       
   
   // Định dạng dữ liệu: 8-bit (Byte)
-  hdma_usart2_rx.Init.PeriphDataAlignment = DMA_PDATAALIGN_BYTE;
-  hdma_usart2_rx.Init.MemDataAlignment = DMA_MDATAALIGN_BYTE; 
+  hdma_usart2_tx.Init.PeriphDataAlignment = DMA_PDATAALIGN_BYTE;
+  hdma_usart2_tx.Init.MemDataAlignment = DMA_MDATAALIGN_BYTE; 
   
   // Chế độ: DMA_MODE_NORMAL (dừng khi đủ) hoặc DMA_MODE_CIRCULAR (vòng lặp liên tục)
-  hdma_usart2_rx.Init.Mode = DMA_CIRCULAR;       
+  hdma_usart2_tx.Init.Mode = DMA_NORMAL;       
   
   // Ưu tiên: Thấp/Trung bình/Cao
-  hdma_usart2_rx.Init.Priority = DMA_PRIORITY_LOW;    
+  hdma_usart2_tx.Init.Priority = DMA_PRIORITY_VERY_HIGH;    
   
   // Chế độ FIFO (thường tắt để tiết kiệm năng lượng cho các tác vụ đơn giản)
-  hdma_usart2_rx.Init.FIFOMode = DMA_FIFOMODE_DISABLE;
+  hdma_usart2_tx.Init.FIFOMode = DMA_FIFOMODE_DISABLE;
+
+  hdma_usart2_tx.Parent = &huart2;
 
 
   HAL_NVIC_SetPriority(DMA1_Stream5_IRQn, 0, 0); 
   HAL_NVIC_EnableIRQ(DMA1_Stream5_IRQn);
 
   /* 4. Gọi hàm Init để áp dụng cấu hình */
-  if (HAL_DMA_Init(&hdma_usart2_rx) != HAL_OK)
+  if (HAL_DMA_Init(&hdma_usart2_tx) != HAL_OK)
   {
     // Xử lý lỗi nếu khởi tạo thất bại
     Error_Handler();
@@ -269,28 +291,21 @@ void HardFault_Handler(uint32_t *pStack)
     RTT_printf("PC  = 0x%08X  ←←← LỆNH GÂY LỖI Ở ĐÂY\n", stacked_pc);
     RTT_printf("PSR = 0x%08X\n", stacked_psr);
 
-    myPrintf("R0  = 0x%x\n", stacked_r0);
-    myPrintf("R1  = 0x%x\n\n", stacked_r1);
-    myPrintf("R2  = 0x%x\n\n", stacked_r2);
-    myPrintf("R3  = 0x%x\n", stacked_r3);
-    myPrintf("R12 = 0x%x\n", stacked_r12);
-    myPrintf("LR  = 0x%x\n", stacked_lr);
-    myPrintf("PC  = 0x%x  ←←← LỆNH GÂY LỖI Ở ĐÂY\n", stacked_pc);
-    myPrintf("PSR = 0x%x\n", stacked_psr);
+    
 
-    // In thêm SP hiện tại (MSP hoặc PSP tùy mode)
-    RTT_printf("Stacked SP  = 0x%08X  (tức là địa chỉ pStack)\n", (uint32_t)pStack);
+    LOG_Message("R0  = %x\n", stacked_r0);
+    LOG_Message("R1  = %x\n", stacked_r1);
+    LOG_Message("R2  = %x\n", stacked_r2);
+    LOG_Message("R3  = %x\n", stacked_r3);
+    LOG_Message("R12 = %x\n", stacked_r12);
+    LOG_Message("LR  = %x\n", stacked_lr);
+    LOG_Message("PC  = %x  Instruction error this here\n", stacked_pc);
+    LOG_Message("PSR = %x\n", stacked_psr);
 
-    // In các thanh ghi fault
-    RTT_printf("HFSR = 0x%08X\n", SCB->HFSR);
-    RTT_printf("CFSR = 0x%08X\n", SCB->CFSR);
-    RTT_printf("BFAR = 0x%08X\n", SCB->BFAR);
-    RTT_printf("MMFAR= 0x%08X\n", SCB->MMFAR);
-
-    myPrintf("HFSR = 0x%x\n", SCB->HFSR);
-    myPrintf("CFSR = 0x%x\n", SCB->CFSR);
-    myPrintf("BFAR = 0x%x\n", SCB->BFAR);
-    myPrintf("MMFAR= 0x%x\n", SCB->MMFAR);
+    LOG_Message("HFSR = %x\n", SCB->HFSR);
+    LOG_Message("CFSR = %x\n", SCB->CFSR);
+    LOG_Message("BFAR = %x\n", SCB->BFAR);
+    LOG_Message("MMFAR= %x\n", SCB->MMFAR);
     //TODO: implement lưu vào flash
     
     while(1) {};
@@ -371,35 +386,3 @@ void SVC_Handler(void) {
 //    uint32_t stacked_psr = pStack[7];
 //
 //}
-
-inline void ConfigClockHSE16MHZ()
-{
-
-    // Selector system clock source BIT 1:0
-    SET_BIT(RCC_CFGR, 3); // pll select
-    //SET_BIT(RCC_CFGR, 1); // SYSTEM CLOCK DIVIDED 
-
-
-    // input => PLLM => Fvoc(clock) => PLLP
-    //• f(VCO clock) = f(PLL clock input) × (PLLN / PLLM)
-    //  128 = 8 * (PLLN(64) / PLLM(4))
-    // PLLN = 64
-    RCC_PLLCFGR |= 0x1000;
-    // PLLM = 4
-    RCC_PLLCFGR |= 0x4;
-    // • f(PLL general clock output) = f(VCO clock) / PLLP
-    //  16 = 128 / 8
-    // PLLP = 8
-    RCC_PLLCFGR |= 0x20000;
-
-    //1: HSE oscillator clock selected as PLL and PLLI2S clock entry
-    RCC_PLLCFGR |= 0x400000;
-
-    // READ bit 25: PLLRDY: Main PLL (PLL) clock ready flag
-    uint8_t a = (RCC_CR & (1 << 25));
-
-    // HSERDY : status của HSE
-    // HSEON : on to selecto HSE source
-    //RCC_CR |= 
-
-}

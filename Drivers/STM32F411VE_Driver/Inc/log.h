@@ -12,7 +12,11 @@ extern "C" {
 #include <stdio.h>
 #include <stddef.h>
 #include <stdarg.h>
+#include "main.h"
 #include <string.h>
+#include "stm32f4xx_hal_uart.h"
+
+extern UART_HandleTypeDef huart2;
 
 typedef enum
 {
@@ -22,6 +26,12 @@ typedef enum
 }type_log;
 
 #define MAX_SIZE_BUFF 64
+
+/* ====== Transmission Mode Selection ====== */
+#define ENABLE_UART_DMA 1  // 1 = Enable UART DMA transmission, 0 = Disable
+#define ENABLE_ITM      0  // 1 = Enable ITM transmission, 0 = Disable
+
+
 
 void led_on(uint8_t pin);
 void led_off(uint8_t pin);
@@ -34,6 +44,7 @@ void hex_to_ascii_bytes(uint32_t value, char* buffer);
 // Function prototypes
 void PrintfLog_Init(void);
 void print_int( int value );
+void LOG_Message(const char* fmt, ...);
 
 #define GPIOD_BASE     0x40020C00UL
 #define GPIOD_BSRR     (*(volatile unsigned int *)(GPIOD_BASE + 0x18))

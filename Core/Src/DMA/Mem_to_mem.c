@@ -87,11 +87,12 @@ void dma_mem_copy(char* source, char* destination, size_t lenght) {
 
     if(cycles2 > cycles) {
         RTT_printf("Cpu lower\n");
-        printf("Cpu lower\n");
+        
+        myPrintf("Cpu lower\n");
     }
 
 
-    RTT_printf("result %d\n", result);
+    myPrintf("result %d\n", result);
 
 }
 

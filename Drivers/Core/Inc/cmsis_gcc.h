@@ -476,7 +476,7 @@ __STATIC_FORCEINLINE uint16_t __LDREXH(volatile uint16_t *addr)
 __STATIC_FORCEINLINE uint32_t __LDREXW(volatile uint32_t *addr)
 {
     uint32_t result;
-
+   // Explain: load giá trị trong addr lưu vào result để store
    __ASM volatile ("ldrex %0, %1" : "=r" (result) : "Q" (*addr) );
    return(result);
 }

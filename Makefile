@@ -4,6 +4,7 @@ CC = $(PREFIX)gcc
 AS = $(PREFIX)as
 LD = $(PREFIX)ld
 OBJCOPY = $(PREFIX)objcopy
+ADDR2 = $(PREFIX)addr2line
 #OBJDUMP = $(PREFIX)objdump
 SIZE = $(PREFIX)size
 DEBUG = 1
@@ -117,9 +118,17 @@ clean:
 FILE_DUMP ?= build/stm32f4xx_gpio.o
 OBJDUMP ?= $(PREFIX)objdump
 OPTIONS ?= -S
-dump:
+
+dump_asm:
 	@echo "Dumping $(FILE_DUMP) with options: $(OPTIONS)"
-	$(OBJDUMP) $(OPTIONS) $(FILE_DUMP) > $(FILE_DUMP)_asm.s
+	$(OBJDUMP) $(OPTIONS) $(FILE_DUMP) > $(FILE_DUMP)_asm.asm
+
+trace_line:
+	@if [ -z "$(ADDR)" ]; then \
+        read -p "Enter address (hex, e.g., 0x08001234): " ADDR; \
+    fi; \
+    $(ADDR2) -e $(TARGET) $$ADDR
+
 
 PATH_OCD := "d:/STMicroelectronics/OpenOCD-20240916-0.12.0"
 OPEN_OCD = openocd.exe

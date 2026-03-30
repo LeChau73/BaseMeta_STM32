@@ -55,7 +55,13 @@ void print_int(int value)
 
     if ( str != (void*)0 )
     {
+        #if ENABLE_UART_DMA
+        HAL_UART_Transmit_DMA(&huart2, (uint8_t*)str, strlen(str));
+        #endif
+        
+        #if ENABLE_ITM
         ITM_SendString(str);
+        #endif
     }
     else
     {
@@ -161,38 +167,67 @@ void myPrintf ( const char* fmt, ... )
                     int i = va_arg(list_va , int );
                     char buffer_temp[10];
                     convert_hex_to_string(i, buffer_temp);
+                    #if ENABLE_UART_DMA
+                    HAL_UART_Transmit_DMA(&huart2, (uint8_t*)buffer_temp, 10);
+                    #endif
+                    #if ENABLE_ITM
                     ITM_SendString(buffer_temp);
+                    #endif
                     break;
                 }
                 case 'c': {
                     char c = va_arg(list_va , char );
+                    #if ENABLE_UART_DMA
+                    HAL_UART_Transmit_DMA(&huart2, (uint8_t*)&c, 1);
+                    #endif
+                    #if ENABLE_ITM
                     ITM_SendChar(c);
+                    #endif
                     break;
                 }
                 case 's': {
                     const char* str = va_arg( list_va, char* );
+                    #if ENABLE_UART_DMA
+                    HAL_UART_Transmit_DMA(&huart2, (uint8_t*)str, strlen(str));
+                    #endif
+                    #if ENABLE_ITM
                     ITM_SendString(str);
+                    #endif
                     break;
                 }
                 case 'p': {
                     int i = va_arg(list_va , int );
                     char buffer_temp[10];
                     convert_hex_to_string(i, buffer_temp);
+                    #if ENABLE_UART_DMA
+                    HAL_UART_Transmit_DMA(&huart2, (uint8_t*)buffer_temp, strlen(buffer_temp));
+                    #endif
                     print_int(i);
                     break;
                 }
                 case '%':
+                    #if ENABLE_ITM
                     ITM_SendString((char[]){"%%\0"});
+                    #endif
                     break;
                 default:
+                    #if ENABLE_ITM
                     ITM_SendChar('%');
                     // CHeck đoạn code này
                     //INFOR: (char[]){*fmt, 0} caller compound literal
                     ITM_SendString((char[]){*fmt, 0});
+                    #endif
                     break;
             }
         } else {
+
+            #if ENABLE_UART_DMA
+            HAL_UART_Transmit_DMA(&huart2,(char[]){*fmt}, 5);
+            #endif
+
+            #if ENABLE_ITM
             ITM_SendString((char[]){*fmt, 0});
+            #endif
         }
         fmt++;
     }
@@ -232,4 +267,76 @@ void led_on(uint8_t pin)
 void led_off(uint8_t pin) 
 {
     GPIOD_BSRR = (1 << (pin + 16));  // Reset pin (OFF)
+}
+
+
+//LOG cho uart thông thường, ko có dma
+void LOG_Message(const char* fmt, ...) {
+    char* find_charac = fmt;
+    bool check_condition = true;
+    char* token;
+
+    va_list list_va;
+    va_start(list_va, fmt);
+    char buffer[MAX_SIZE_BUFF];
+    while(*fmt)
+    {
+        if (*fmt == '%')
+        {
+            fmt++;
+            switch (*fmt)
+            {
+                //@: Xử lý tại ký tự sau % tức là : "%d" => đang xử lý tại d
+                case 'd': {
+                    int i = va_arg(list_va , int );
+                    char* str = int_to_string(i, buffer);
+                    HAL_UART_Transmit(&huart2, str, strlen(str), 500);
+                    break;
+                }
+                case 'x': {
+                    int i = va_arg(list_va , int );
+                    convert_hex_to_string(i, buffer);
+                    HAL_UART_Transmit(&huart2, (uint8_t*)buffer, 10, 500);
+                    break;
+                }
+                case 'c': {
+                    char c = va_arg(list_va , char );
+                    HAL_UART_Transmit(&huart2, (uint8_t*)&c, 1, 500);
+                    break;
+                }
+                case 's': {
+                    const char* str = va_arg( list_va, char* );
+                    HAL_UART_Transmit(&huart2, (uint8_t*)str, strlen(str), 500);
+
+                    break;
+                }
+                case 'p': {
+                    int i = va_arg(list_va , int );
+                    char buffer_temp[10];
+                    convert_hex_to_string(i, buffer_temp);
+                    HAL_UART_Transmit(&huart2, (uint8_t*)buffer_temp, strlen(buffer_temp), 500);
+                    print_int(i);
+                    break;
+                }
+                case '%':
+                    ITM_SendString((char[]){"%%\0"});
+                    break;
+                default:
+
+                    ITM_SendChar('%');
+                    // CHeck đoạn code này
+                    //INFOR: (char[]){*fmt, 0} caller compound literal
+                    ITM_SendString((char[]){*fmt, 0});
+                    break;
+            }
+        } else {
+
+            HAL_UART_Transmit(&huart2,(char[]){*fmt, 0}, 1, 500);
+
+        }
+        fmt++;
+    }
+
+    va_end(list_va);
+
 }

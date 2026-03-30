@@ -42,6 +42,3 @@ void DMA_UART_to_Mem() {
 }
 
 
-void DMA1_Stream5_IRQHandler() {
-    RTT_printf("Hiiii DMA ISR Stream 0");
-}

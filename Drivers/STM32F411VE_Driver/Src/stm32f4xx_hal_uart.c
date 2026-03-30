@@ -1393,7 +1393,7 @@ HAL_StatusTypeDef HAL_UART_Transmit_DMA(UART_HandleTypeDef *huart, const uint8_t
     huart->TxXferCount = Size;
 
     huart->ErrorCode = HAL_UART_ERROR_NONE;
-    huart->gState = HAL_UART_STATE_BUSY_TX;
+    //huart->gState = HAL_UART_STATE_BUSY_TX;
 
     /* Set the UART DMA transfer complete callback */
     huart->hdmatx->XferCpltCallback = UART_DMATransmitCplt;

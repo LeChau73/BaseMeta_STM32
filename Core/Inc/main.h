@@ -18,10 +18,6 @@
 #include "stm32f4xx_hal_gpio.h"
 #include "stm32f4xx_hal_dma.h"
 
-// Configuage clock
-#define RCC_CR              (*(volatile uint32_t*)0x40023800)
-#define RCC_PLLCFGR         (*(volatile uint32_t*)0x40023804)
-#define RCC_CFGR            (*(volatile uint32_t*)0x40023808)
 
 #define RTT_printf(...)  SEGGER_RTT_printf(0,__VA_ARGS__)
 #define LOG_REG(name) SEGGER_RTT_printf(0, #name " = 0x%08X\n", (unsigned int)(name))  //for register
@@ -30,24 +26,9 @@
 //8 : chiều rộng tối thiểu là 8 ký tự.
 //0 : đệm bằng ký tự 0 (nếu độ dài thực tế nhỏ hơn 8).
 
-
-//TODO: check xem đang dùng clock nào
-//RCC_CFGR 0x08
+extern UART_HandleTypeDef huart2;
 
 
-
-#define ROM_M4_PID4   (*(volatile uint32_t*)0xE00FFFD0) // Peripheral ID4 in ROM table (Cortex-M4)
-
-#define ROM_M4_CPM3   (*(volatile uint32_t*)0xE00FFFFC) // Peripheral ID4 in ROM table (Cortex-M4)
-
-#define ROM_M4_SCS    (*(volatile uint32_t*)0xE00FF000) // Peripheral ID4 in ROM table (Cortex-M4)
-
-
-
-struct Dummy {
-    int member1;
-    int member2;
-};
 
 
 // Priority ground
