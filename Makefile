@@ -121,7 +121,7 @@ OPTIONS ?= -S
 
 dump_asm:
 	@echo "Dumping $(FILE_DUMP) with options: $(OPTIONS)"
-	$(OBJDUMP) $(OPTIONS) $(FILE_DUMP) > $(FILE_DUMP)_asm.asm
+	$(OBJDUMP) $(OPTIONS) $(TARGET) > $(TARGET)_asm.asm
 
 trace_line:
 	@if [ -z "$(ADDR)" ]; then \

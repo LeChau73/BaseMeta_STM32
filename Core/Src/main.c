@@ -43,7 +43,13 @@ int main(void)
     RTT_printf("=====Hello RTT!=====\n");     //Không dùng được do dump thanh ghi của SVD
     MX_DMA_Init();
     MX_USART2_UART_Init();
-    LOG_Message("------------ Init log UART --------------\n");
+    LOG_Message("------------ Init log UART --------------\n");   //No user DMA
+
+
+    ATOMIC_SET_BIT(huart2.Instance->CR3, USART_CR3_DMAT);
+
+    SET_BIT(huart2.Instance->CR3, USART_CR3_DMAT);
+
 
     char test[] = "Dummy DMA";
     HAL_UART_Transmit_DMA(&huart2, test, 8);
@@ -51,17 +57,18 @@ int main(void)
     //Chỗ này sau khi DMA chưa gửi dữ liệu qua cho UART được
     uint32_t *regs = (uint32_t *)hdma_usart2_tx.StreamBaseAddress;
     LOG_Message("Value of %x\n", *regs);
-    myPrintf("Hello\n");
+
+
+
+
   /* end */
 
     DWT_Init();
     DMA_Config_Mem_to_Mem();
 
     dma_mem_copy(source, destination, MAX_BUFFER);
-
+    LOG_Message("Time Systick =  %d\n", HAL_GetTick());
     while (1) {
-
-
         for (volatile int i = 0; i < 1000000; i++); // Delay giả lập
         led_on(12);
         for (volatile int i = 0; i < 1000000; i++); // Delay giả lập

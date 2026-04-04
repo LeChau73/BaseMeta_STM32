@@ -222,7 +222,7 @@ void myPrintf ( const char* fmt, ... )
         } else {
 
             #if ENABLE_UART_DMA
-            HAL_UART_Transmit_DMA(&huart2,(char[]){*fmt}, 5);
+            HAL_UART_Transmit_DMA(&huart2,(char[]){*fmt}, 1);
             #endif
 
             #if ENABLE_ITM

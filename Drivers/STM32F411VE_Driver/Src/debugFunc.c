@@ -11,8 +11,7 @@ void initTimer()
 uint32_t timeStart()
 {
     volatile uint32_t start_cycle;
-    myPrintf("---- Time start ----\n");
-    initTimer();
+    LOG_Message("---- Time start ----\n");
 
     // reset bộ đếm
     DWT->CYCCNT = 0;
@@ -23,8 +22,7 @@ uint32_t timeEnd()
 {
     volatile uint32_t end_cycle;
    
-    myPrintf("---- End time ----\n");
-    initTimer();
+    LOG_Message("---- End time ----\n");
     DWT->CTRL |= ~(1 << 0); // ngừng đếm
     // reset bộ đếm
     end_cycle = DWT->CYCCNT;
@@ -36,5 +34,5 @@ void conculateTime(uint32_t start, uint32_t end)
 {
     uint32_t total_cycle;
     total_cycle = end - start;
-    myPrintf("Total cycle = %d\n", total_cycle);
+    LOG_Message("Total cycle = %d\n", total_cycle);
 }
