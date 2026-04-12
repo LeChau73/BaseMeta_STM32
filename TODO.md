@@ -1,20 +1,23 @@
-Các milestonds cho tạo ra RTOS custom đơn giản
+# 🚀 UART DMA Driver Project Tracking
 
-1) Khi tạo 1 task phải làm gì?
+## 1. Ring Buffer Layer (Data)
+- [x] Định nghĩa Struct RingBuffer (Head, Tail, Capacity)
+- [ ] Viết hàm `RB_Push` (Xử lý wrap-around)
+- [ ] Implement Atomic Access cho Head/Tail (LDREX/STREX)
+- [ ] Unit test: Push dữ liệu vượt ngưỡng store
 
-//TODO:
-Case Test: Check xem allocate vào đúng heap tự custom chưa
-Check địa chỉ start đúng chưa
-Check linker list đúng chưa
-Check khởi tạo stack ban đầu đúng chưa
+## 2. Engine Manager (Middle)
+- [ ] Thiết kế State Machine (IDLE, BUSY, ERROR)
+- [ ] Viết hàm `UART_Engine_TriggerTx`
+- [ ] Xử lý Callback cho Upper Layer
+- [ ] Cơ chế Timeout/Health check trong vòng `while(1)`
 
-2) Khởi tạo Systick và viết hàm swtich MSP to PSP
+## 3. Hardware Layer (Low-level)
+- [x] Cấu hình UART Register (Baudrate, Mode)
+- [ ] Cấu hình DMA Stream & Channel
+- [ ] Viết ISR cho DMA Transfer Complete
+- [ ] Viết ISR cho UART Error (ORE, FE, NE)
 
-3) Push và Pop stack khi context switch
-
-4) Viết schedule 
-    - Có tính năng gì
-    - Sử dụng thuật toán nào
-
-=> Mục tiêu là ít nhất 2 task switch qua lại được là được đầu tiên
-
+## 4. Application Layer
+- [ ] Hoàn thiện hàm `Log_Write` (vsnprintf)
+- [ ] Tích hợp cơ chế Retry/Timeout khi Buffer full

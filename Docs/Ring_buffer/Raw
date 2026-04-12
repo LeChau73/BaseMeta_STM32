@@ -1,0 +1,39 @@
+ringBufS_init
+Listing 2 shows the implementation of the simple ring buffer initialization process. In this case, we simply clear all of the objectmemory. This not only flushes the queue. It also clears the buffer too.
+
+Listing 2: initializing the simple ring buffer.
+
+ #include  #include  "ringBufS.h"void ringBufS_init (ringBufS *_this){    /*****      The following clears:        -> buf        -> head        -> tail        -> count      and sets head = tail    ***/    memset (_this, 0, sizeof (*_this));}
+ringBufS_empty
+Listing 3 shows the implementation for checking the empty status of thequeue. In this case we just check to see whether or not the count fieldis zero.
+
+Listing 3. Testing the queue empty condition.
+
+ #include  "ringBufS.h"int ringBufS_empty (ringBufS *_this){    return (0==_this->count);}
+ringBufS_full
+Of course, we also need to check the queue full condition. Listing 4 shows that this is simply a check of the count field against the buffersize.
+
+Listing 4. Testing the queue full condition.
+
+ #include  "ringBufS.h"int ringBufS_full (ringBufS *_this){    return (_this->count>=RBUF_SIZE);}
+
+
+
+
+ringBufS_get
+In Listing 5 we get a byte from the queue. Notice that the returnvalue in this method is an integer. We use the value of -1 to signalthat an attempt was made to retrieve a value from an empty queue.
+
+We introduce the modulo_inc() method here. This method encapsulates the modulus arithmetic required for updating the buffer indices.
+
+Listing 5. Getting a byte from the queue.
+
+ #include  "modulo.h"#include  "ringBufS.h"int ringBufS_get (ringBufS *_this){    int c;    if (_this->count>0)    {      c           = _this->buf[_this->tail];      _this->tail = modulo_inc (_this->tail, RBUF_SIZE);      --_this->count;    }    else    {      c = -1;    }    return (c);}
+
+ringBufS_put
+Listing 6 shows how we put a byte to the queue. This listing shows the incoming byte is dropped if the queue is full.
+
+Listing 6. Placing the data into the queue.
+
+#include  "modulo.h"#include  "ringBufS.h"void ringBufS_put (ringBufS *_this, const unsigned char c){    if (_this->count < RBUF_SIZE)    {      _this->buf[_this->head] = c;      _this->head = modulo_inc (_this->head, RBUF_SIZE);      ++_this->count;    }}
+ringBufS_flush
+Listing 7 shows how to flush the queue. In this case we set the countand the indices to zero. We can optionally clear the buffer to zero (0)if required. In some cases this may be useful for diagnostics purposes.

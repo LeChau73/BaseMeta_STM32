@@ -113,7 +113,6 @@ uart_status HAL_uart_receiverMul(char* buffer);
 void uart_write_it(char* data, int len, int flush);
 
 /* Purpose : register callback when comple buffer tran */
-//BUG: Tại sao inline thì k được
 void register_callback_write_complete(uart_callback_t callback);
 
 /* Control call ISR */

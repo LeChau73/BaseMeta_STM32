@@ -45,6 +45,22 @@ int main(void)
     MX_USART2_UART_Init();
     LOG_Message("------------ Init log UART --------------\n");   //No user DMA
 
+    //Test UART
+    ringBufS ring1;
+    
+    ringBufS_Init(&ring1);
+
+    STATUS_RING status_r = ringBuf_put(&ring1, 'h');
+
+    char temp_buff[14] = "le hong chau";
+
+    ringBuf_push(&ring1, temp_buff, 14);
+
+    for(int i = 0; i < 10; i++) {
+        char c = ringBuf_get(&ring1);
+       LOG_Message("ring mes = %c", c);
+    }
+
 
     ATOMIC_SET_BIT(huart2.Instance->CR3, USART_CR3_DMAT);
 
