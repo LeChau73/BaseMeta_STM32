@@ -300,7 +300,7 @@ void LOG_Message(const char* fmt, ...) {
                     break;
                 }
                 case 'c': {
-                    char c = va_arg(list_va , char );
+                    char c = (char)va_arg(list_va , int ); //BUG: 12/4/2026 : 
                     HAL_UART_Transmit(&huart2, (uint8_t*)&c, 1, 500);
                     break;
                 }
