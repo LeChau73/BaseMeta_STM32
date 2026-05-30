@@ -2,9 +2,9 @@
 
 ## 1. Ring Buffer Layer (Data)
 - [x] Định nghĩa Struct RingBuffer (Head, Tail, Capacity)
-- [ ] Viết hàm `RB_Push` (Xử lý wrap-around)
-- [ ] Implement Atomic Access cho Head/Tail (LDREX/STREX)
-- [ ] Unit test: Push dữ liệu vượt ngưỡng store
+- [x] Viết hàm `RB_Push` (Xử lý wrap-around)
+- [x] Implement Atomic Access cho Head/Tail (LDREX/STREX)
+- [x] Unit test: Push dữ liệu vượt ngưỡng store
 
 ## 2. Engine Manager (Middle)
 - [ ] Thiết kế State Machine (IDLE, BUSY, ERROR)

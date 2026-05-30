@@ -10,40 +10,59 @@ char source[MAX_BUFFER];
 char destination[MAX_BUFFER];
 
 
-void DWT_Init(void)
-{
-    CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;
-    DWT->CYCCNT = 0;
-    DWT->CTRL |= DWT_CTRL_CYCCNTENA_Msk;
-}
 
 
-void DMA1_Stream5_IRQHandler() {
-
-    // Phân biệt đang là lỗi nào
-    if ( HAL_DMA_GetError)
-    {
-      /* code */
-    }
-    
-
+void DMA1_Stream6_IRQHandler() {
 
     HAL_DMA_IRQHandler(&hdma_usart2_tx);
     LOG_Message("Hiiii DMA ISR Stream 0");
+}
+
+
+void test_load_and_exclusive(int* a_modify, int a) {
+    int value_read; // Biến C để nhận kết quả
+    int result;
+    // operand 2 (%1) phải là 1 địa chỉ(tức là phải là 1 con trỏ)             //clobbers
+    // output sẽ được đặt vào register với = là ràng buộc input phải được load và register, và output write và thanh ghi
+    __asm__ volatile ("ldrex %0, [%1]" : "=r" (value_read) : "r" (a_modify) : "memory"); // __asm__ volatile ("strex %0, %1, [%2]" : "=r" (result) : "r" (a) , "r"(a_modify) : "memory");
+
+
+    //LOG_Message("value_read = %d\n", value_read); //BUG: gọi ISR của UART store fail
+    value_read = a;// chỉ gọi các phép toán học
+
+    __asm__ volatile ("strex %0, %1, [%2]" : "=&r" (result) : "r" (value_read) , "r"(a_modify) : "memory");
+
+    LOG_Message("Result = %d | a_modify value = %d\n", result,  *a_modify);
+
+}
+
+// Adapter for uart to connected with interface of higher layer
+static void transport_uart(char* data,int len) {
+    HAL_UART_Transmit(&huart2, data, len, 500);
 }
 
 int main(void) 
 {
   /* For log */
     //ITM_Init(false);
+    SEGGER_RTT_Init();
     HAL_Init();
     SystemClock_Config();
     MX_GPIO_Init();
-    SEGGER_RTT_Init();
-    RTT_printf("=====Hello RTT!=====\n");     //Không dùng được do dump thanh ghi của SVD
+    RTT_printf("=====Hello RTT!=====\n");     //Không dùng đượmakec do dump thanh ghi của SVD
     MX_DMA_Init();
     MX_USART2_UART_Init();
+
+    
+
+    // HAL_SetSpecific_Time(2, TimeUnit.mS);
+
+    LOG_Register(transport_uart); //Register type of output log
+
     LOG_Message("------------ Init log UART --------------\n");   //No user DMA
+
+    int a = 5;
+    test_load_and_exclusive(&a, 7);
 
     //Test UART
     ringBufS ring1;
@@ -78,8 +97,6 @@ int main(void)
 
 
   /* end */
-
-    DWT_Init();
     DMA_Config_Mem_to_Mem();
 
     dma_mem_copy(source, destination, MAX_BUFFER);
@@ -245,8 +262,8 @@ static void MX_DMA_Init(void)
   hdma_usart2_tx.Parent = &huart2;
 
 
-  HAL_NVIC_SetPriority(DMA1_Stream5_IRQn, 0, 0); 
-  HAL_NVIC_EnableIRQ(DMA1_Stream5_IRQn);
+  HAL_NVIC_SetPriority(DMA1_Stream6_IRQn, 0, 0); 
+  HAL_NVIC_EnableIRQ(DMA1_Stream6_IRQn);
 
   /* 4. Gọi hàm Init để áp dụng cấu hình */
   if (HAL_DMA_Init(&hdma_usart2_tx) != HAL_OK)
@@ -291,10 +308,25 @@ void assert_failed(uint8_t *file, uint32_t line)
 }
 #endif /* USE_FULL_ASSERT */
 
-
-void HardFault_Handler(uint32_t *pStack)
+__attribute__((naked))
+void HardFault_Handler(void)
 {
-    RTT_LOG_RED("------- HARD FAULT ------\n");
+  // Xác định đang dùng PSP hay MSP
+  // tst : là lệnh and lr với 0x4 ,và cập nhập Z (Zero flag) : nếu sau and = 0 thì Z = 1.
+  __asm volatile (
+        " tst lr, #4              \n" // Kiểm tra bit 2 của EXC_RETURN (LR), nếu bằng 0 thì Z flag bằng 1
+        " ite eq                  \n" // Nếu bit 2 = 0 (đang dùng MSP) , so sánh với Z llag
+        " mrseq r0, msp           \n" // nạp MSP vào R0 làm tham số thứ 1 , nếu Z lag bằng 1,tức là bit 2 của lr = 0 thì nap msp vào r0
+        " mrsne r0, psp           \n" // Nếu bit 2 = 1 (đang dùng PSP), nạp PSP vào R0, ngược lại
+        " ldr r1, =HardFault_Decoder \n" // Nạp địa chỉ hàm xử lý logic
+        " bx r1                   \n" // Nhảy đến hàm xử lý
+    );
+}
+
+
+// 1. Hàm C xử lý logic (nhận tham số từ R0)
+void HardFault_Decoder(uint32_t *pStack) {
+    //RTT_LOG_RED("------- HARD FAULT ------\n");
 
     uint32_t stacked_r0  = pStack[0];
     uint32_t stacked_r1  = pStack[1];
@@ -305,14 +337,14 @@ void HardFault_Handler(uint32_t *pStack)
     uint32_t stacked_pc  = pStack[6];   // ← Đây mới là PC gây lỗi
     uint32_t stacked_psr = pStack[7];
 
-    RTT_printf("R0  = 0x%08X\n", stacked_r0);
-    RTT_printf("R1  = 0x%08X\n", stacked_r1);
-    RTT_printf("R2  = 0x%08X\n", stacked_r2);
-    RTT_printf("R3  = 0x%08X\n", stacked_r3);
-    RTT_printf("R12 = 0x%08X\n", stacked_r12);
-    RTT_printf("LR  = 0x%08X\n", stacked_lr);
-    RTT_printf("PC  = 0x%08X  ←←← LỆNH GÂY LỖI Ở ĐÂY\n", stacked_pc);
-    RTT_printf("PSR = 0x%08X\n", stacked_psr);
+    //RTT_printf("R0  = 0x%08X\n", stacked_r0);
+    //RTT_printf("R1  = 0x%08X\n", stacked_r1);
+    //RTT_printf("R2  = 0x%08X\n", stacked_r2);
+    //RTT_printf("R3  = 0x%08X\n", stacked_r3);
+    //RTT_printf("R12 = 0x%08X\n", stacked_r12);
+    //RTT_printf("LR  = 0x%08X\n", stacked_lr);
+    //RTT_printf("PC  = 0x%08X  ←←← LỆNH GÂY LỖI Ở ĐÂY\n", stacked_pc);
+    //RTT_printf("PSR = 0x%08X\n", stacked_psr);
 
     
 
@@ -331,7 +363,7 @@ void HardFault_Handler(uint32_t *pStack)
     LOG_Message("MMFAR= %x\n", SCB->MMFAR);
     //TODO: implement lưu vào flash
     
-    while(1) {};
+    while(1);
 }
 
 void EXTI9_5_IRQHandler(void) {
@@ -343,18 +375,6 @@ void EXTI9_5_IRQHandler(void) {
     LOG_REG_COLOR1(EXTI->PR);
 }
 
-void DWT_DataMaching(int value,volatile void* addrOfValue)
-{
-    *(volatile uint32_t *)0xE0000FB0 = 0xC5ACCE55; // DWT_LAR: Unlock DWT
-    *(volatile uint32_t *)0xE0001000 |= (1 << 0); // DWT_CTRL: CYCCNTENA
-
-
-    
-    *(volatile uint32_t *)0xE0001014 = (uint32_t)addrOfValue; // DWT_COMP1: Địa chỉ sensor_data
-    *(volatile uint32_t *)0xE0001018 = (value) | (0b10 << 0) | (1 << 2); // Data value match + EMITRANGE
-    *(volatile uint32_t *)0xE0000E00 |= (1 << 1); // Enable ITM port 1 for DWT
-    *(volatile uint32_t *)0xE0001024 |= (1 << 24); // Emit ITM event
-}
 
 void EXTI0_IRQHandler(void) {
     //__asm volatile ("SVC #1"); //BUG: Không gọi SVC trong IRQ 

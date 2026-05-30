@@ -195,3 +195,7 @@ int main(void)
 | `ringBufS.h` | Struct definition, `RBUF_SIZE` macro |
 | `modulo.h`   | `modulo_inc()` for index wrapping    |
 | `string.h`   | `memset()` used in `init`            |
+
+## ARM
+
+>Tại sao lại cần lệnh ld

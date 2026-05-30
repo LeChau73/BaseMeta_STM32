@@ -189,6 +189,16 @@ HAL_StatusTypeDef HAL_Init(void)
   return HAL_OK;
 }
 
+
+
+HAL_StatusTypeDef HAL_SetSpecific_Time(uint16_t time_specific, float unit) {
+    float time_unit = unit;
+    // TÍnh toán giá trị nạp vào
+    uint32_t tick = (uint32_t)(((float)(time_specific * time_unit)) * SystemCoreClock);
+
+    SysTick_Config(tick);
+}
+
 /**
   * @brief  This function de-Initializes common part of the HAL and stops the systick.
   *         This function is optional.   

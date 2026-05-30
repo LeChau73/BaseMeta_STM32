@@ -57,6 +57,24 @@ typedef enum
   * @}
   */
 
+typedef struct {
+    const float pS;  // Picosecond
+    const float nS;  // Nanosecond
+    const float uS;  // Microsecond
+    const float mS;  // Millisecond
+    const float S;   // Second
+} TimeUnit_t;
+
+static const TimeUnit_t TimeUnit = {
+    .pS = 1.0f / 1000000000000,
+    .nS = 1.0f / 1000000000,
+    .uS = 1.0f / 1000000,
+    .mS = 1.0f / 1000,
+    .S = 1.0f
+}
+
+
+
 /**
   * @}
   */
@@ -221,6 +239,7 @@ HAL_StatusTypeDef HAL_DeInit(void);
 void HAL_MspInit(void);
 void HAL_MspDeInit(void);
 HAL_StatusTypeDef HAL_InitTick (uint32_t TickPriority);
+HAL_StatusTypeDef HAL_SetSpecific_Time(uint16_t time_specific, float unit);
 /**
   * @}
   */

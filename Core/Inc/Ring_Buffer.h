@@ -1,11 +1,40 @@
 #ifndef _RING_BUFFER_H__
 #define _RING_BUFFER_H__
-#include "lib_engine_manager.h"
 #include "log.h"
 
 
 // Maximum of ring buffer
 #define MAX_SIZE 1024
+
+#define ATOMIC_INCREASE(DATA)                                 \
+  do {                                                        \
+    uint32_t val;                                             \
+    do {                                                      \
+      val = __LDREXW((__IO uint32_t *)&(DATA));               \
+      val++;                                                  \
+    } while ((__STREXW(val,(__IO uint32_t *)&(DATA))) != 0U); \
+  } while(0)
+
+
+#define ATOMIC_DECREASE(DATA)                                 \
+  do {                                                        \
+    uint32_t val;                                             \
+    do {                                                      \
+      val = __LDREXW((__IO uint32_t *)&(DATA));               \
+      val--;                                                  \
+    } while ((__STREXW(val,(__IO uint32_t *)&(DATA))) != 0U); \
+  } while(0)
+
+
+#define ATOMIC_ADD(DATA, COUNT_NUMBER)                                 \
+  do {                                                        \
+    uint32_t val;                                             \
+    do {                                                      \
+      val = __LDREXW((__IO uint32_t *)&(DATA));               \
+      val += COUNT_NUMBER;                                                  \
+    } while ((__STREXW(val,(__IO uint32_t *)&(DATA))) != 0U); \
+  } while(0)
+    
 
 // Define structure of ring
 struct ty_ringBufS{
@@ -39,9 +68,13 @@ char ringBuf_get(ringBufS *ring);
 //Put a byte from the queue
 STATUS_RING ringBuf_put(ringBufS *ring, char data);
 
+inline uint16_t caculate_number_data_avalable(const ringBufS *ring);
+
 //Put a mul byte from the queue
 STATUS_RING ringBuf_push(ringBufS *ring, char buf[], uint16_t length);
 
 STATUS_RING ringBuf_flush(ringBufS *ring);
+
+
 
 #endif

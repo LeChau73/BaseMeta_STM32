@@ -24,7 +24,5 @@ sequenceDiagram
     else Hết chỗ (Error)
         Eng->App: callback Error
     end
-
     deactivate Eng
-
 ```

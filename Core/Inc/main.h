@@ -44,7 +44,8 @@ inline uint32_t  __get_MSP();
 inline void ConfigClockHSE16MHZ();
 
 void USART2_IRQHandler(void);
-void HardFault_Handler(uint32_t *pStack);
+void HardFault_Handler();
+void HardFault_Decoder(uint32_t *pStack);
 void EXTI9_5_IRQHandler(void);
 void SVC_Handler(void);
 void EXTI0_IRQHandler(void);
@@ -66,5 +67,5 @@ extern char compare(char* source, char* destination, size_t lenght);
 extern void Init_Data_Source(char* f_source,size_t size);
 
 void SysTick_Handler(void) ;
-
+void HardFault_Decoder(uint32_t *pStack);
 #endif

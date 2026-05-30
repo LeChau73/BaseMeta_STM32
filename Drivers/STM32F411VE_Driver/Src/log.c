@@ -1,5 +1,45 @@
 #include "log.h"
 
+
+// Enhance my log to astraction layer
+
+
+// Object only use to this file
+static LogTranportFn s_transport = NULL;
+
+// Connect interfact of higher layer with low layer
+void LOG_Register(LogTranportFn fn) {
+    s_transport = fn;
+}
+
+// Adapter for uart to connected with interface of higher layer
+static void transport_uart(char* data,int len) {
+    HAL_UART_Transmit(&huart2, data, len, 500);
+}
+
+//
+static void transport_ITM(char* data,int len) {
+    ITM_SendString( data );
+}
+
+static void log_emit(char* data,int len) {
+    if(s_transport == NULL)
+        return;
+
+    s_transport(data, len);
+}
+
+
+static void log_emit_str(const char* str) {
+    log_emit((const uint8_t*)str, strlen(str));
+}
+
+static void log_emit_char(char c) {
+    log_emit((const uint8_t*)&c, 1);
+}
+
+
+
 // Hàm chuyển đổi int sang chuỗi (cơ số 10)
 char *int_to_string(int num, char *buffer) {
     if (num == 0) {
@@ -240,13 +280,6 @@ void myPrintf ( const char* fmt, ... )
 
 
 
-
-
-
-
-
-
-
 /**
  * @brief Dùng cho debug
  * 
@@ -272,71 +305,51 @@ void led_off(uint8_t pin)
 
 //LOG cho uart thông thường, ko có dma
 void LOG_Message(const char* fmt, ...) {
-    char* find_charac = fmt;
-    bool check_condition = true;
-    char* token;
-
-    va_list list_va;
-    va_start(list_va, fmt);
     char buffer[MAX_SIZE_BUFF];
-    while(*fmt)
-    {
-        if (*fmt == '%')
-        {
+
+    va_list args;
+    va_start(args, fmt);
+
+    while (*fmt) {
+        if (*fmt == '%') {
             fmt++;
-            switch (*fmt)
-            {
-                //@: Xử lý tại ký tự sau % tức là : "%d" => đang xử lý tại d
+            switch (*fmt) {
                 case 'd': {
-                    int i = va_arg(list_va , int );
-                    char* str = int_to_string(i, buffer);
-                    HAL_UART_Transmit(&huart2, str, strlen(str), 500);
+                    int i = va_arg(args, int);
+                    log_emit_str(int_to_string(i, buffer));
                     break;
                 }
                 case 'x': {
-                    int i = va_arg(list_va , int );
+                    int i = va_arg(args, int);
                     convert_hex_to_string(i, buffer);
-                    HAL_UART_Transmit(&huart2, (uint8_t*)buffer, 10, 500);
+                    log_emit_str(buffer);
                     break;
                 }
                 case 'c': {
-                    char c = (char)va_arg(list_va , int ); //BUG: 12/4/2026 : 
-                    HAL_UART_Transmit(&huart2, (uint8_t*)&c, 1, 500);
+                    char c = (char)va_arg(args, int);
+                    log_emit_char(c);
                     break;
                 }
                 case 's': {
-                    const char* str = va_arg( list_va, char* );
-                    HAL_UART_Transmit(&huart2, (uint8_t*)str, strlen(str), 500);
-
+                    const char* str = va_arg(args, const char*);
+                    log_emit_str(str);
                     break;
                 }
-                case 'p': {
-                    int i = va_arg(list_va , int );
-                    char buffer_temp[10];
-                    convert_hex_to_string(i, buffer_temp);
-                    HAL_UART_Transmit(&huart2, (uint8_t*)buffer_temp, strlen(buffer_temp), 500);
-                    print_int(i);
+                case '%': {
+                    log_emit_char('%');
                     break;
                 }
-                case '%':
-                    ITM_SendString((char[]){"%%\0"});
+                default: {
+                    log_emit_char('%');
+                    log_emit_char(*fmt);
                     break;
-                default:
-
-                    ITM_SendChar('%');
-                    // CHeck đoạn code này
-                    //INFOR: (char[]){*fmt, 0} caller compound literal
-                    ITM_SendString((char[]){*fmt, 0});
-                    break;
+                }
             }
         } else {
-
-            HAL_UART_Transmit(&huart2,(char[]){*fmt, 0}, 1, 500);
-
+            log_emit_char(*fmt);
         }
         fmt++;
     }
 
-    va_end(list_va);
-
+    va_end(args);
 }
