@@ -71,7 +71,7 @@ static const TimeUnit_t TimeUnit = {
     .uS = 1.0f / 1000000,
     .mS = 1.0f / 1000,
     .S = 1.0f
-}
+};
 
 
 

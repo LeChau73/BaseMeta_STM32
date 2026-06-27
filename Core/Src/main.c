@@ -54,6 +54,7 @@ int main(void)
     MX_USART2_UART_Init();
 
     
+    log_Str(MAIN, "HELLO , TESTCASE 1");
 
     // HAL_SetSpecific_Time(2, TimeUnit.mS);
 
@@ -64,21 +65,7 @@ int main(void)
     int a = 5;
     test_load_and_exclusive(&a, 7);
 
-    //Test UART
-    ringBufS ring1;
-    
-    ringBufS_Init(&ring1);
-
-    STATUS_RING status_r = ringBuf_put(&ring1, 'h');
-
     char temp_buff[14] = "le hong chau";
-
-    ringBuf_push(&ring1, temp_buff, 14);
-
-    for(int i = 0; i < 10; i++) {
-        char c = ringBuf_get(&ring1);
-       LOG_Message("ring mes = %c", c);
-    }
 
 
     ATOMIC_SET_BIT(huart2.Instance->CR3, USART_CR3_DMAT);
@@ -363,7 +350,10 @@ void HardFault_Decoder(uint32_t *pStack) {
     LOG_Message("MMFAR= %x\n", SCB->MMFAR);
     //TODO: implement lưu vào flash
     
-    while(1);
+    while(1) {
+          led_on(12);
+    }
+
 }
 
 void EXTI9_5_IRQHandler(void) {

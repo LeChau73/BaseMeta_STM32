@@ -68,7 +68,7 @@ char ringBuf_get(ringBufS *ring);
 //Put a byte from the queue
 STATUS_RING ringBuf_put(ringBufS *ring, char data);
 
-inline uint16_t caculate_number_data_avalable(const ringBufS *ring);
+uint16_t caculate_number_data_avalable(const ringBufS *ring);
 
 //Put a mul byte from the queue
 STATUS_RING ringBuf_push(ringBufS *ring, char buf[], uint16_t length);

@@ -134,7 +134,7 @@ STATUS_RING ringBuf_put(ringBufS *ring, char data) {
 }
 
 
-inline uint16_t caculate_number_data_avalable(const ringBufS *ring) {
+uint16_t caculate_number_data_avalable(const ringBufS *ring) {
     uint16_t number_byte_contain = 0;
 
     int a;

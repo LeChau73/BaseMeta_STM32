@@ -10,6 +10,18 @@ SIZE = $(PREFIX)size
 DEBUG = 1
 
 BUILD_TIME := $(shell date +%Y%m%d__%H%M%S)
+# Tên file đầu ra
+TARGET = $(BUILD_DIR)/firmware
+
+# Phân tích mã assembly
+# make dump TARGET="myprogram.elf" OPTIONS="-S -d"
+FILE_DUMP ?= build/Ring_Buffer.o
+OBJDUMP ?= $(PREFIX)objdump
+OPTIONS ?= -S
+
+
+#USED
+#make dump_symbols_o FILE_DUMP=build/main.o
 
 # Thư mục dự án
 SRC_DIR = \
@@ -61,8 +73,6 @@ ifeq ($(semihosting),1)
 SRCS := $(filter-out %syscalls.c, $(SRCS))
 endif
 
-
-
 # Remove syscalls.c if exists (to avoid conflicts)
 #SRCS := $(filter-out %syscalls.c,$(SRCS))
 
@@ -72,8 +82,7 @@ vpath %.c $(SRC_DIR) .
 # Tạo danh sách các file object (chỉ lấy tên file, không lấy đường dẫn)
 OBJS = $(addprefix $(BUILD_DIR)/, $(notdir $(SRCS:.c=.o)))
 
-# Tên file đầu ra
-TARGET = $(BUILD_DIR)/firmware
+
 
 # Mục tiêu mặc định
 all: $(BUILD_DIR) $(TARGET).elf $(TARGET).hex $(TARGET).bin size
@@ -103,21 +112,6 @@ $(TARGET).hex: $(TARGET).elf
 $(TARGET).bin: $(TARGET).elf
 	$(OBJCOPY) -O binary $< $@
 
-# Hiển thị kích thước
-size: $(TARGET).elf
-	$(SIZE) $< 
-	@echo "Saving size information to $(TARGET)_size.txt"
-	$(SIZE) $< > $(TARGET)_size.txt
-
-# Dọn dẹp
-clean:
-	rm -rf $(BUILD_DIR)
-
-# Phân tích mã assembly
-# make dump TARGET="myprogram.elf" OPTIONS="-S -d"
-FILE_DUMP ?= build/stm32f4xx_gpio.o
-OBJDUMP ?= $(PREFIX)objdump
-OPTIONS ?= -S
 
 dump_asm:
 	@echo "Dumping $(FILE_DUMP) with options: $(OPTIONS)"
@@ -128,6 +122,31 @@ trace_line:
         read -p "Enter address (hex, e.g., 0x08001234): " ADDR; \
     fi; \
     $(ADDR2) -e $(TARGET) $$ADDR
+
+# Hiển thị kích thước
+size: $(TARGET).elf
+	$(SIZE) $< 
+	@echo "Saving size information to $(TARGET)_size.txt"
+	$(SIZE) $< > $(TARGET)_size.txt
+
+# Dump symbol table
+dump_symbols: $(TARGET).elf
+	@echo "Dumping symbol table from $(TARGET).elf"
+	$(PREFIX)objdump -t $(TARGET).elf > $(TARGET)_symbols.txt
+	@echo "Symbol table saved to $(TARGET)_symbols.txt"
+	$(PREFIX)objdump -t $(TARGET).elf
+
+# Dump symbol table từ object file
+dump_symbols_o: 
+	@echo "Dumping symbol table from $(FILE_DUMP)"
+	$(PREFIX)nm -C -n $(FILE_DUMP) > $(FILE_DUMP)_symbols.txt
+	@echo "Symbol table saved to $(FILE_DUMP)_symbols.txt"
+	$(PREFIX)nm -C -n $(FILE_DUMP)
+
+
+# Dọn dẹp
+clean:
+	rm -rf $(BUILD_DIR)
 
 
 PATH_OCD := "d:/STMicroelectronics/OpenOCD-20240916-0.12.0"

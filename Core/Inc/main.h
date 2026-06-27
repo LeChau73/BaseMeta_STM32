@@ -17,7 +17,7 @@
 #include "myRTOS.h"
 #include "stm32f4xx_hal_gpio.h"
 #include "stm32f4xx_hal_dma.h"
-#include "Ring_Buffer.h"
+#include "lib_log_dma_uart.h"
 
 #define RTT_printf(...)  SEGGER_RTT_printf(0,__VA_ARGS__)
 #define LOG_REG(name) SEGGER_RTT_printf(0, #name " = 0x%08X\n", (unsigned int)(name))  //for register

@@ -12,8 +12,8 @@ extern "C" {
 #include <stdio.h>
 #include <stddef.h>
 #include <stdarg.h>
-#include "main.h"
 #include <string.h>
+#include "stm32f4xx_hal_dma.h"
 #include "stm32f4xx_hal_uart.h"
 
 extern UART_HandleTypeDef huart2;
